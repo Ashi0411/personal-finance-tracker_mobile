@@ -22,19 +22,21 @@ class AuthProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     final loggedInFlag = prefs.getBool('is_logged_in') ?? false;
     final savedUserJson = prefs.getString('cached_user');
+    final savedAvatar = prefs.getString('user_custom_avatar_base64');
 
     if (!loggedInFlag || savedUserJson == null) {
-      // User is NOT logged in. Strictly stay logged out.
       _currentUser = null;
       _isLoggedIn = false;
       _setLoading(false);
       return;
     }
 
-    // User previously logged in successfully
     try {
       if (_apiClient.isDemoMode) {
         _currentUser = UserModel.fromJson(jsonDecode(savedUserJson));
+        if (savedAvatar != null) {
+          _currentUser = _currentUser!.copyWith(avatarUrl: savedAvatar);
+        }
         _isLoggedIn = true;
       } else {
         final response = await _apiClient.get('/auth-status.php');
@@ -43,17 +45,24 @@ class AuthProvider extends ChangeNotifier {
               ? (response.data['user'] ?? response.data)
               : response.data;
           _currentUser = UserModel.fromJson(userData);
+          if (savedAvatar != null) {
+            _currentUser = _currentUser!.copyWith(avatarUrl: savedAvatar);
+          }
           _isLoggedIn = true;
           await prefs.setString('cached_user', jsonEncode(_currentUser!.toJson()));
         } else {
-          // Verify with local session if valid
           _currentUser = UserModel.fromJson(jsonDecode(savedUserJson));
+          if (savedAvatar != null) {
+            _currentUser = _currentUser!.copyWith(avatarUrl: savedAvatar);
+          }
           _isLoggedIn = true;
         }
       }
     } catch (_) {
-      // Use cached profile if session was explicitly active
       _currentUser = UserModel.fromJson(jsonDecode(savedUserJson));
+      if (savedAvatar != null) {
+        _currentUser = _currentUser!.copyWith(avatarUrl: savedAvatar);
+      }
       _isLoggedIn = true;
     }
     _setLoading(false);
@@ -65,6 +74,8 @@ class AuthProvider extends ChangeNotifier {
 
     final trimmedEmail = email.trim();
     final defaultName = trimmedEmail.contains('@') ? trimmedEmail.split('@').first : 'User';
+    final prefs = await SharedPreferences.getInstance();
+    final savedAvatar = prefs.getString('user_custom_avatar_base64');
 
     if (forceDemo || _apiClient.isDemoMode) {
       await _apiClient.setDemoMode(true);
@@ -73,11 +84,11 @@ class AuthProvider extends ChangeNotifier {
         id: 1,
         fullName: defaultName,
         email: trimmedEmail.isNotEmpty ? trimmedEmail : 'user@financetracker.com',
+        avatarUrl: savedAvatar,
         currency: '\$',
         createdAt: DateTime.now(),
       );
       _isLoggedIn = true;
-      final prefs = await SharedPreferences.getInstance();
       await prefs.setString('cached_user', jsonEncode(_currentUser!.toJson()));
       await prefs.setBool('is_logged_in', true);
       _setLoading(false);
@@ -95,41 +106,41 @@ class AuthProvider extends ChangeNotifier {
             ? (response.data['user'] ?? response.data)
             : {'id': 1, 'full_name': defaultName, 'email': trimmedEmail};
         _currentUser = UserModel.fromJson(userData);
+        if (savedAvatar != null) {
+          _currentUser = _currentUser!.copyWith(avatarUrl: savedAvatar);
+        }
         _isLoggedIn = true;
-        final prefs = await SharedPreferences.getInstance();
         await prefs.setString('cached_user', jsonEncode(_currentUser!.toJson()));
         await prefs.setBool('is_logged_in', true);
         _setLoading(false);
         return true;
       } else {
-        // Safe local session
         await _apiClient.setDemoMode(true);
         _currentUser = UserModel(
           id: 1,
           fullName: defaultName,
           email: trimmedEmail,
+          avatarUrl: savedAvatar,
           currency: '\$',
           createdAt: DateTime.now(),
         );
         _isLoggedIn = true;
-        final prefs = await SharedPreferences.getInstance();
         await prefs.setString('cached_user', jsonEncode(_currentUser!.toJson()));
         await prefs.setBool('is_logged_in', true);
         _setLoading(false);
         return true;
       }
     } catch (_) {
-      // Safe local session
       await _apiClient.setDemoMode(true);
       _currentUser = UserModel(
         id: 1,
         fullName: defaultName,
         email: trimmedEmail,
+        avatarUrl: savedAvatar,
         currency: '\$',
         createdAt: DateTime.now(),
       );
       _isLoggedIn = true;
-      final prefs = await SharedPreferences.getInstance();
       await prefs.setString('cached_user', jsonEncode(_currentUser!.toJson()));
       await prefs.setBool('is_logged_in', true);
       _setLoading(false);
@@ -143,6 +154,8 @@ class AuthProvider extends ChangeNotifier {
 
     final trimmedName = fullName.trim();
     final trimmedEmail = email.trim();
+    final prefs = await SharedPreferences.getInstance();
+    final savedAvatar = prefs.getString('user_custom_avatar_base64');
 
     try {
       final response = await _apiClient.post('/register.php', {
@@ -159,11 +172,11 @@ class AuthProvider extends ChangeNotifier {
           id: 1,
           fullName: trimmedName.isNotEmpty ? trimmedName : 'User',
           email: trimmedEmail,
+          avatarUrl: savedAvatar,
           currency: '\$',
           createdAt: DateTime.now(),
         );
         _isLoggedIn = true;
-        final prefs = await SharedPreferences.getInstance();
         await prefs.setString('cached_user', jsonEncode(_currentUser!.toJson()));
         await prefs.setBool('is_logged_in', true);
         _setLoading(false);
@@ -175,11 +188,11 @@ class AuthProvider extends ChangeNotifier {
         id: 1,
         fullName: trimmedName.isNotEmpty ? trimmedName : 'User',
         email: trimmedEmail,
+        avatarUrl: savedAvatar,
         currency: '\$',
         createdAt: DateTime.now(),
       );
       _isLoggedIn = true;
-      final prefs = await SharedPreferences.getInstance();
       await prefs.setString('cached_user', jsonEncode(_currentUser!.toJson()));
       await prefs.setBool('is_logged_in', true);
       _setLoading(false);
@@ -204,10 +217,17 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<bool> updateAvatar(String? avatarData) async {
-    if (_currentUser == null) return false;
-    _currentUser = _currentUser!.copyWith(avatarUrl: avatarData);
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('cached_user', jsonEncode(_currentUser!.toJson()));
+    if (avatarData != null) {
+      await prefs.setString('user_custom_avatar_base64', avatarData);
+    } else {
+      await prefs.remove('user_custom_avatar_base64');
+    }
+
+    if (_currentUser != null) {
+      _currentUser = _currentUser!.copyWith(avatarUrl: avatarData);
+      await prefs.setString('cached_user', jsonEncode(_currentUser!.toJson()));
+    }
     notifyListeners();
     return true;
   }
@@ -221,13 +241,16 @@ class AuthProvider extends ChangeNotifier {
       return false;
     }
 
+    final prefs = await SharedPreferences.getInstance();
+    final savedAvatar = prefs.getString('user_custom_avatar_base64');
+
     if (_apiClient.isDemoMode) {
       await Future.delayed(const Duration(milliseconds: 200));
       _currentUser = _currentUser!.copyWith(
         fullName: fullName ?? _currentUser!.fullName,
         email: email ?? _currentUser!.email,
+        avatarUrl: savedAvatar ?? _currentUser!.avatarUrl,
       );
-      final prefs = await SharedPreferences.getInstance();
       await prefs.setString('cached_user', jsonEncode(_currentUser!.toJson()));
       _setLoading(false);
       return true;
@@ -245,8 +268,8 @@ class AuthProvider extends ChangeNotifier {
         _currentUser = _currentUser!.copyWith(
           fullName: fullName ?? _currentUser!.fullName,
           email: email ?? _currentUser!.email,
+          avatarUrl: savedAvatar ?? _currentUser!.avatarUrl,
         );
-        final prefs = await SharedPreferences.getInstance();
         await prefs.setString('cached_user', jsonEncode(_currentUser!.toJson()));
         _setLoading(false);
         return true;

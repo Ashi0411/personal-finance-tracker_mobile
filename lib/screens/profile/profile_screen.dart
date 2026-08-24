@@ -19,9 +19,9 @@ class ProfileScreen extends StatelessWidget {
       final picker = ImagePicker();
       final pickedFile = await picker.pickImage(
         source: source,
-        maxWidth: 600,
-        maxHeight: 600,
-        imageQuality: 85,
+        maxWidth: 300,
+        maxHeight: 300,
+        imageQuality: 75,
       );
 
       if (pickedFile != null) {
@@ -34,7 +34,7 @@ class ProfileScreen extends StatelessWidget {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Profile picture updated! 🎉'),
+              content: Text('Profile picture saved successfully! 🎉'),
               backgroundColor: AppColors.income,
             ),
           );
@@ -96,7 +96,8 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   child: const Icon(Icons.photo_library_rounded, color: AppColors.primary, size: 20),
                 ),
-                title: const Text('Choose from Gallery / Photos', style: TextStyle(fontWeight: FontWeight.w600)),
+                title: const Text('Choose Photo from Device / Gallery', style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: const Text('Upload JPG, PNG from device', style: TextStyle(fontSize: 11)),
                 onTap: () {
                   Navigator.pop(ctx);
                   _pickImage(context, ImageSource.gallery);
@@ -112,6 +113,7 @@ class ProfileScreen extends StatelessWidget {
                   child: const Icon(Icons.camera_alt_rounded, color: AppColors.income, size: 20),
                 ),
                 title: const Text('Take a Photo (Camera)', style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: const Text('Direct camera on mobile / select photo on PC', style: TextStyle(fontSize: 11)),
                 onTap: () {
                   Navigator.pop(ctx);
                   _pickImage(context, ImageSource.camera);
@@ -304,7 +306,7 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  user?.email ?? 'ashii@gmail.com',
+                  user?.email ?? 'user@financetracker.com',
                   style: TextStyle(
                     fontSize: 14,
                     color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
