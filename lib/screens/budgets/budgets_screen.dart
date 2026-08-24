@@ -7,6 +7,7 @@ import '../../providers/budget_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../widgets/category_icon_helper.dart';
 import '../../widgets/empty_state_view.dart';
+import '../../widgets/hover_lift_card.dart';
 import 'add_edit_budget_dialog.dart';
 
 class BudgetsScreen extends StatefulWidget {
@@ -195,14 +196,13 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
                       final catColor = CategoryIconHelper.parseColor(b.categoryColor);
                       final progress = (b.percentageSpent / 100).clamp(0.0, 1.0);
 
-                      return Container(
+                      return HoverLiftCard(
+                        liftOffset: -3,
+                        borderRadius: 18,
+                        glowColor: catColor,
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: isDark ? AppColors.darkCard : AppColors.lightCard,
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
-                        ),
+                        color: isDark ? AppColors.darkCard : AppColors.lightCard,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [

@@ -7,6 +7,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_text_field.dart';
+import '../../widgets/hover_lift_card.dart';
 import '../../widgets/user_avatar.dart';
 import '../auth/login_screen.dart';
 import 'server_settings_screen.dart';
@@ -331,12 +332,10 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          Container(
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.darkCard : AppColors.lightCard,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
-            ),
+          HoverLiftCard(
+            borderRadius: 18,
+            glowColor: AppColors.primary,
+            color: isDark ? AppColors.darkCard : AppColors.lightCard,
             child: Column(
               children: [
                 ListTile(
@@ -385,12 +384,10 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          Container(
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.darkCard : AppColors.lightCard,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
-            ),
+          HoverLiftCard(
+            borderRadius: 18,
+            glowColor: AppColors.accent,
+            color: isDark ? AppColors.darkCard : AppColors.lightCard,
             child: ListTile(
               leading: const Icon(Icons.dns_outlined, color: AppColors.accent, size: 20),
               title: const Text('API Base URL & Demo Mode', style: TextStyle(fontWeight: FontWeight.w600)),

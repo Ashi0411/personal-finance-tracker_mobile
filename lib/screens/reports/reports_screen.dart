@@ -9,6 +9,7 @@ import '../../providers/report_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../widgets/category_icon_helper.dart';
+import '../../widgets/hover_lift_card.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -259,13 +260,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 ),
                 const SizedBox(height: 20),
                 // 4-Tier Financial Summary Card
-                Container(
+                HoverLiftCard(
                   padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkCard : AppColors.lightCard,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
-                  ),
+                  borderRadius: 24,
+                  glowColor: AppColors.primary,
+                  color: isDark ? AppColors.darkCard : AppColors.lightCard,
                   child: Column(
                     children: [
                       Row(
@@ -319,84 +318,84 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Container(
-                  height: 220,
+                HoverLiftCard(
                   padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkCard : AppColors.lightCard,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
-                  ),
-                  child: cashflows.isEmpty
-                      ? const Center(child: Text('No cash flow records yet. Add income & expenses to see charts!'))
-                      : BarChart(
-                          BarChartData(
-                            alignment: BarChartAlignment.spaceAround,
-                            maxY: cashflows.fold<double>(0.0, (max, cf) => cf.income > max ? cf.income : (cf.expense > max ? cf.expense : max)) * 1.2,
-                            barTouchData: BarTouchData(
-                              touchTooltipData: BarTouchTooltipData(
-                                getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                                  final cf = cashflows[groupIndex];
-                                  final isIncomeRod = rodIndex == 0;
-                                  return BarTooltipItem(
-                                    '${cf.month}\n${isIncomeRod ? 'Income: ' : 'Expense: '}${Formatters.currency(rod.toY, symbol: themeProvider.currencySymbol)}',
-                                    const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                                  );
-                                },
-                              ),
-                            ),
-                            titlesData: FlTitlesData(
-                              leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                              bottomTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  getTitlesWidget: (val, meta) {
-                                    final index = val.toInt();
-                                    if (index >= 0 && index < cashflows.length) {
-                                      return Padding(
-                                        padding: const EdgeInsets.only(top: 6),
-                                        child: Text(
-                                          cashflows[index].month,
-                                          style: TextStyle(
-                                            color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                    return const Text('');
+                  borderRadius: 20,
+                  glowColor: AppColors.income,
+                  color: isDark ? AppColors.darkCard : AppColors.lightCard,
+                  child: SizedBox(
+                    height: 190,
+                    child: cashflows.isEmpty
+                        ? const Center(child: Text('No cash flow records yet. Add income & expenses to see charts!'))
+                        : BarChart(
+                            BarChartData(
+                              alignment: BarChartAlignment.spaceAround,
+                              maxY: cashflows.fold<double>(0.0, (max, cf) => cf.income > max ? cf.income : (cf.expense > max ? cf.expense : max)) * 1.2,
+                              barTouchData: BarTouchData(
+                                touchTooltipData: BarTouchTooltipData(
+                                  getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                                    final cf = cashflows[groupIndex];
+                                    final isIncomeRod = rodIndex == 0;
+                                    return BarTooltipItem(
+                                      '${cf.month}\n${isIncomeRod ? 'Income: ' : 'Expense: '}${Formatters.currency(rod.toY, symbol: themeProvider.currencySymbol)}',
+                                      const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                    );
                                   },
                                 ),
                               ),
+                              titlesData: FlTitlesData(
+                                leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                bottomTitles: AxisTitles(
+                                  sideTitles: SideTitles(
+                                    showTitles: true,
+                                    getTitlesWidget: (val, meta) {
+                                      final index = val.toInt();
+                                      if (index >= 0 && index < cashflows.length) {
+                                        return Padding(
+                                          padding: const EdgeInsets.only(top: 6),
+                                          child: Text(
+                                            cashflows[index].month,
+                                            style: TextStyle(
+                                              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                      return const Text('');
+                                    },
+                                  ),
+                                ),
+                              ),
+                              gridData: const FlGridData(show: false),
+                              borderData: FlBorderData(show: false),
+                              barGroups: cashflows.asMap().entries.map((entry) {
+                                final index = entry.key;
+                                final cf = entry.value;
+                                return BarChartGroupData(
+                                  x: index,
+                                  barRods: [
+                                    BarChartRodData(
+                                      toY: cf.income,
+                                      color: AppColors.income,
+                                      width: 10,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    BarChartRodData(
+                                      toY: cf.expense,
+                                      color: AppColors.expense,
+                                      width: 10,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                  ],
+                                );
+                              }).toList(),
                             ),
-                            gridData: const FlGridData(show: false),
-                            borderData: FlBorderData(show: false),
-                            barGroups: cashflows.asMap().entries.map((entry) {
-                              final index = entry.key;
-                              final cf = entry.value;
-                              return BarChartGroupData(
-                                x: index,
-                                barRods: [
-                                  BarChartRodData(
-                                    toY: cf.income,
-                                    color: AppColors.income,
-                                    width: 10,
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  BarChartRodData(
-                                    toY: cf.expense,
-                                    color: AppColors.expense,
-                                    width: 10,
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                ],
-                              );
-                            }).toList(),
                           ),
-                        ),
+                  ),
                 ),
                 const SizedBox(height: 24),
                 // Category Spending Breakdown Doughnut Chart
@@ -409,13 +408,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Container(
+                HoverLiftCard(
                   padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkCard : AppColors.lightCard,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
-                  ),
+                  borderRadius: 20,
+                  glowColor: AppColors.expense,
+                  color: isDark ? AppColors.darkCard : AppColors.lightCard,
                   child: categories.isEmpty
                       ? const Center(child: Padding(padding: EdgeInsets.all(24), child: Text('No spending data logged for this period')))
                       : Column(

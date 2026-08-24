@@ -36,4 +36,22 @@ class CategoryModel {
       'is_default': isDefault ? 1 : 0,
     };
   }
+
+  CategoryModel copyWith({
+    int? id,
+    String? name,
+    String? type,
+    String? icon,
+    String? color,
+    bool? isDefault,
+  }) {
+    return CategoryModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      type: type ?? this.type,
+      icon: icon ?? this.icon,
+      color: color ?? this.color,
+      isDefault: isDefault ?? this.isDefault,
+    );
+  }
 }

@@ -4,7 +4,7 @@ import '../core/constants/app_constants.dart';
 
 class ThemeProvider extends ChangeNotifier {
   ThemeMode _themeMode = ThemeMode.light; // Default to clean, modern Light Mode like web app
-  String _currencySymbol = '\$';
+  String _currencySymbol = 'Rs.';
 
   ThemeMode get themeMode => _themeMode;
   bool get isDarkMode => _themeMode == ThemeMode.dark;
@@ -18,7 +18,7 @@ class ThemeProvider extends ChangeNotifier {
     } else {
       _themeMode = ThemeMode.light;
     }
-    _currencySymbol = prefs.getString(AppConstants.keyCurrencySymbol) ?? '\$';
+    _currencySymbol = prefs.getString(AppConstants.keyCurrencySymbol) ?? 'Rs.';
     notifyListeners();
   }
 

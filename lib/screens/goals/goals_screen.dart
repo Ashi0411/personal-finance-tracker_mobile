@@ -7,6 +7,7 @@ import '../../providers/goal_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../widgets/category_icon_helper.dart';
 import '../../widgets/empty_state_view.dart';
+import '../../widgets/hover_lift_card.dart';
 import 'add_goal_dialog.dart';
 import 'quick_deposit_dialog.dart';
 
@@ -169,14 +170,13 @@ class _GoalsScreenState extends State<GoalsScreen> {
                       final goalColor = CategoryIconHelper.parseColor(g.color);
                       final isComplete = g.isCompleted || g.progressPercentage >= 100;
 
-                      return Container(
+                      return HoverLiftCard(
+                        liftOffset: -3,
+                        borderRadius: 20,
+                        glowColor: goalColor,
                         margin: const EdgeInsets.only(bottom: 14),
                         padding: const EdgeInsets.all(18),
-                        decoration: BoxDecoration(
-                          color: isDark ? AppColors.darkCard : AppColors.lightCard,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
-                        ),
+                        color: isDark ? AppColors.darkCard : AppColors.lightCard,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [

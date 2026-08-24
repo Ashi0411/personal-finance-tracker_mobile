@@ -72,8 +72,21 @@ class TransactionProvider extends ChangeNotifier {
   }
 
   Future<void> fetchCategories() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedCats = prefs.getString('user_categories');
+
+    if (savedCats != null) {
+      try {
+        final List list = jsonDecode(savedCats);
+        _categories = list.map((item) => CategoryModel.fromJson(item)).toList();
+        notifyListeners();
+        return;
+      } catch (_) {}
+    }
+
     if (_apiClient.isDemoMode) {
       _loadDefaultCategories();
+      await _saveCategoriesToStorage();
       notifyListeners();
       return;
     }
@@ -83,13 +96,101 @@ class TransactionProvider extends ChangeNotifier {
       if (response.success && response.data != null) {
         final List list = response.data is List ? response.data : (response.data['categories'] ?? []);
         _categories = list.map((item) => CategoryModel.fromJson(item)).toList();
+        await _saveCategoriesToStorage();
       } else {
         _loadDefaultCategories();
+        await _saveCategoriesToStorage();
       }
     } catch (_) {
       _loadDefaultCategories();
+      await _saveCategoriesToStorage();
     }
     notifyListeners();
+  }
+
+  Future<bool> addCategory({
+    required String name,
+    required String type,
+    required String icon,
+    required String color,
+  }) async {
+    final newCategory = CategoryModel(
+      id: DateTime.now().millisecondsSinceEpoch,
+      name: name,
+      type: type,
+      icon: icon,
+      color: color,
+      isDefault: false,
+    );
+
+    _categories.add(newCategory);
+    await _saveCategoriesToStorage();
+    notifyListeners();
+
+    if (!_apiClient.isDemoMode) {
+      try {
+        await _apiClient.post('/categories.php', {
+          'name': name,
+          'type': type,
+          'icon': icon,
+          'color': color,
+        });
+      } catch (_) {}
+    }
+    return true;
+  }
+
+  Future<bool> updateCategory({
+    required int id,
+    required String name,
+    required String type,
+    required String icon,
+    required String color,
+  }) async {
+    final index = _categories.indexWhere((c) => c.id == id);
+    if (index != -1) {
+      _categories[index] = _categories[index].copyWith(
+        name: name,
+        type: type,
+        icon: icon,
+        color: color,
+      );
+      await _saveCategoriesToStorage();
+      notifyListeners();
+
+      if (!_apiClient.isDemoMode) {
+        try {
+          await _apiClient.put('/categories.php', {
+            'id': id,
+            'name': name,
+            'type': type,
+            'icon': icon,
+            'color': color,
+          });
+        } catch (_) {}
+      }
+      return true;
+    }
+    return false;
+  }
+
+  Future<bool> deleteCategory(int id) async {
+    _categories.removeWhere((c) => c.id == id);
+    await _saveCategoriesToStorage();
+    notifyListeners();
+
+    if (!_apiClient.isDemoMode) {
+      try {
+        await _apiClient.delete('/categories.php?id=$id');
+      } catch (_) {}
+    }
+    return true;
+  }
+
+  Future<void> _saveCategoriesToStorage() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonList = _categories.map((c) => c.toJson()).toList();
+    await prefs.setString('user_categories', jsonEncode(jsonList));
   }
 
   Future<void> fetchTransactions() async {
@@ -168,7 +269,7 @@ class TransactionProvider extends ChangeNotifier {
     );
 
     if (_apiClient.isDemoMode) {
-      await Future.delayed(const Duration(milliseconds: 200));
+      await Future.delayed(const Duration(milliseconds: 150));
       _transactions.insert(0, newTx);
       await _saveToStorage();
       _setLoading(false);
@@ -270,21 +371,18 @@ class TransactionProvider extends ChangeNotifier {
   void _loadDefaultCategories() {
     _categories = [
       // Income Categories
-      CategoryModel(id: 1, name: 'Salary', type: 'income', icon: 'briefcase', color: '#10B981'),
-      CategoryModel(id: 2, name: 'Freelance', type: 'income', icon: 'laptop', color: '#6366F1'),
-      CategoryModel(id: 3, name: 'Investments', type: 'income', icon: 'trending-up', color: '#06B6D4'),
-      CategoryModel(id: 4, name: 'Side Hustle', type: 'income', icon: 'zap', color: '#F59E0B'),
-      CategoryModel(id: 5, name: 'Gifts & Bonus', type: 'income', icon: 'gift', color: '#8B5CF6'),
+      CategoryModel(id: 1, name: 'Salary', type: 'income', icon: 'briefcase', color: '#0284C7'),
+      CategoryModel(id: 2, name: 'Personal Income', type: 'income', icon: 'trending-up', color: '#0EA5E9'),
+      CategoryModel(id: 3, name: 'Freelance', type: 'income', icon: 'laptop', color: '#6366F1'),
+      CategoryModel(id: 4, name: 'Investments', type: 'income', icon: 'trending-up', color: '#06B6D4'),
       // Expense Categories
-      CategoryModel(id: 6, name: 'Food & Dining', type: 'expense', icon: 'utensils', color: '#EF4444'),
-      CategoryModel(id: 7, name: 'Housing & Rent', type: 'expense', icon: 'home', color: '#F97316'),
-      CategoryModel(id: 8, name: 'Transportation', type: 'expense', icon: 'car', color: '#3B82F6'),
-      CategoryModel(id: 9, name: 'Shopping', type: 'expense', icon: 'shopping-bag', color: '#EC4899'),
-      CategoryModel(id: 10, name: 'Entertainment', type: 'expense', icon: 'film', color: '#8B5CF6'),
-      CategoryModel(id: 11, name: 'Utilities & Bills', type: 'expense', icon: 'zap', color: '#EAB308'),
-      CategoryModel(id: 12, name: 'Health & Medical', type: 'expense', icon: 'heart', color: '#14B8A6'),
-      CategoryModel(id: 13, name: 'Education', type: 'expense', icon: 'book', color: '#6366F1'),
-      CategoryModel(id: 14, name: 'Travel', type: 'expense', icon: 'plane', color: '#06B6D4'),
+      CategoryModel(id: 5, name: 'Food', type: 'expense', icon: 'utensils', color: '#EF4444'),
+      CategoryModel(id: 6, name: 'Transport', type: 'expense', icon: 'car', color: '#F43F5E'),
+      CategoryModel(id: 7, name: 'Shopping', type: 'expense', icon: 'shopping-bag', color: '#EC4899'),
+      CategoryModel(id: 8, name: 'Housing & Rent', type: 'expense', icon: 'home', color: '#F97316'),
+      CategoryModel(id: 9, name: 'Entertainment', type: 'expense', icon: 'film', color: '#8B5CF6'),
+      CategoryModel(id: 10, name: 'Utilities & Bills', type: 'expense', icon: 'zap', color: '#EAB308'),
+      CategoryModel(id: 11, name: 'Health & Medical', type: 'expense', icon: 'heart', color: '#14B8A6'),
     ];
   }
 

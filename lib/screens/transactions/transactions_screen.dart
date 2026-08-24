@@ -7,6 +7,7 @@ import '../../providers/theme_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../widgets/category_icon_helper.dart';
 import '../../widgets/empty_state_view.dart';
+import '../../widgets/hover_lift_card.dart';
 import 'add_edit_transaction_sheet.dart';
 
 class TransactionsScreen extends StatefulWidget {
@@ -160,80 +161,77 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                               onDismissed: (_) {
                                 txProvider.deleteTransaction(tx.id);
                               },
-                              child: Container(
+                              child: HoverLiftCard(
+                                liftOffset: -3,
+                                borderRadius: 18,
+                                glowColor: catColor,
                                 padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: isDark ? AppColors.darkCard : AppColors.lightCard,
-                                  borderRadius: BorderRadius.circular(18),
-                                  border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
-                                ),
-                                child: InkWell(
-                                  onTap: () => _openAddTransactionSheet(tx),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(12),
-                                        decoration: BoxDecoration(
-                                          color: catColor.withValues(alpha: 0.15),
-                                          borderRadius: BorderRadius.circular(14),
-                                        ),
-                                        child: Icon(
-                                          CategoryIconHelper.getIcon(tx.categoryIcon),
-                                          color: catColor,
-                                          size: 20,
-                                        ),
+                                color: isDark ? AppColors.darkCard : AppColors.lightCard,
+                                onTap: () => _openAddTransactionSheet(tx),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: catColor.withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(14),
                                       ),
-                                      const SizedBox(width: 14),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              tx.description,
-                                              style: TextStyle(
-                                                fontSize: 15,
-                                                fontWeight: FontWeight.w700,
-                                                color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                                      child: Icon(
+                                        CategoryIconHelper.getIcon(tx.categoryIcon),
+                                        color: catColor,
+                                        size: 20,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 14),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            tx.description,
+                                            style: TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w700,
+                                              color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Row(
+                                            children: [
+                                              Text(
+                                                tx.categoryName,
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
                                               ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Row(
-                                              children: [
-                                                Text(
-                                                  tx.categoryName,
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
+                                              const SizedBox(width: 6),
+                                              Text('•', style: TextStyle(color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted)),
+                                              const SizedBox(width: 6),
+                                              Text(
+                                                Formatters.dateShort(tx.transactionDate),
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
                                                 ),
-                                                const SizedBox(width: 6),
-                                                Text('•', style: TextStyle(color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted)),
-                                                const SizedBox(width: 6),
-                                                Text(
-                                                  Formatters.dateShort(tx.transactionDate),
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
                                       ),
-                                      Text(
-                                        '${isIncome ? '+' : '-'}${Formatters.currency(tx.amount, symbol: themeProvider.currencySymbol)}',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w800,
-                                          color: isIncome ? AppColors.income : AppColors.expense,
-                                        ),
+                                    ),
+                                    Text(
+                                      '${isIncome ? '+' : '-'}${Formatters.currency(tx.amount, symbol: themeProvider.currencySymbol)}',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w800,
+                                        color: isIncome ? AppColors.income : AppColors.expense,
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             );
@@ -248,25 +246,28 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
   Widget _buildFilterChip(String type, String label, TransactionProvider provider, [Color? activeColor]) {
     final isSelected = provider.filterType == type;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = activeColor ?? const Color(0xFF6366F1);
+
     return Expanded(
-      child: GestureDetector(
+      child: HoverLiftCard(
+        liftOffset: -2,
+        borderRadius: 14,
+        glowColor: color,
         onTap: () => provider.setFilterType(type),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            color: isSelected ? (activeColor ?? AppColors.primary) : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected ? (activeColor ?? AppColors.primary) : AppColors.darkBorder,
-            ),
-          ),
-          alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        color: isSelected ? color : (isDark ? const Color(0xFF1E293B) : Colors.white),
+        border: Border.all(
+          color: isSelected ? color : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+          width: isSelected ? 1.5 : 1.0,
+        ),
+        child: Center(
           child: Text(
             label,
             style: TextStyle(
-              color: isSelected ? Colors.white : null,
+              color: isSelected ? Colors.white : (isDark ? Colors.white70 : const Color(0xFF475569)),
               fontSize: 13,
-              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
             ),
           ),
         ),
