@@ -2,7 +2,9 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/utils/export_helper.dart';
 import '../../core/utils/formatters.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/report_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/transaction_provider.dart';
@@ -28,6 +30,99 @@ class _ReportsScreenState extends State<ReportsScreen> {
     });
   }
 
+  void _showExportOptions(BuildContext context) {
+    final reportProvider = Provider.of<ReportProvider>(context, listen: false);
+    final txProvider = Provider.of<TransactionProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        return Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkCard : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                'Export Financial Records',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Download printable PDF statement or CSV spreadsheet',
+                style: TextStyle(
+                  color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.expense.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.expense, size: 22),
+                ),
+                title: const Text('Download PDF Statement', style: TextStyle(fontWeight: FontWeight.w700)),
+                subtitle: const Text('Complete formatted financial overview with tables and KPIs', style: TextStyle(fontSize: 12)),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await ExportHelper.exportPdfReport(
+                    report: reportProvider.report,
+                    transactions: txProvider.transactions,
+                    user: authProvider.currentUser,
+                    currencySymbol: themeProvider.currencySymbol,
+                  );
+                },
+              ),
+              const SizedBox(height: 8),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.income.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.table_chart_rounded, color: AppColors.income, size: 22),
+                ),
+                title: const Text('Export CSV (Excel / Sheets)', style: TextStyle(fontWeight: FontWeight.w700)),
+                subtitle: const Text('Raw transactions data spreadsheet', style: TextStyle(fontSize: 12)),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await ExportHelper.exportCsvReport(
+                    txProvider.transactions,
+                    themeProvider.currencySymbol,
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -43,6 +138,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
         title: const Text('Financial Analytics'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.file_download_outlined, size: 22),
+            tooltip: 'Export PDF / CSV',
+            onPressed: () => _showExportOptions(context),
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh_rounded, size: 20),
             onPressed: () => reportProvider.fetchReport(),
           ),
@@ -53,6 +153,55 @@ class _ReportsScreenState extends State<ReportsScreen> {
           : ListView(
               padding: const EdgeInsets.only(left: 20, right: 20, top: 10, bottom: 90),
               children: [
+                // Quick Export Banner Button
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFEEF2FF), Color(0xFFFAF5FF)],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFC7D2FE)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.primary, size: 18),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text(
+                              'Export Financial Statement',
+                              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF1E1B4B)),
+                            ),
+                            Text(
+                              'Download official PDF & CSV records',
+                              style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                            ),
+                          ],
+                        ),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: () => _showExportOptions(context),
+                        icon: const Icon(Icons.download_rounded, size: 14),
+                        label: const Text('Export', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          backgroundColor: AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
                 // Period Toggle (Monthly vs Yearly)
                 Container(
                   padding: const EdgeInsets.all(4),
@@ -179,7 +328,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
                   ),
                   child: cashflows.isEmpty
-                      ? const Center(child: Text('No cash flow data available'))
+                      ? const Center(child: Text('No cash flow records yet. Add income & expenses to see charts!'))
                       : BarChart(
                           BarChartData(
                             alignment: BarChartAlignment.spaceAround,
@@ -268,7 +417,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
                   ),
                   child: categories.isEmpty
-                      ? const Center(child: Padding(padding: EdgeInsets.all(24), child: Text('No spending data for this period')))
+                      ? const Center(child: Padding(padding: EdgeInsets.all(24), child: Text('No spending data logged for this period')))
                       : Column(
                           children: [
                             SizedBox(
