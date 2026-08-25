@@ -7,6 +7,7 @@ class MonthYearPickerBar extends StatelessWidget {
   final ValueChanged<DateTime> onDateChanged;
   final bool isDark;
   final Color primaryColor;
+  final bool isYearOnly;
 
   const MonthYearPickerBar({
     super.key,
@@ -14,6 +15,7 @@ class MonthYearPickerBar extends StatelessWidget {
     required this.onDateChanged,
     required this.isDark,
     this.primaryColor = const Color(0xFF2563EB),
+    this.isYearOnly = false,
   });
 
   void _changeMonth(int delta) {
@@ -53,10 +55,10 @@ class MonthYearPickerBar extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
             child: Icon(
               icon,
-              size: 15,
+              size: 16,
               color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
             ),
           ),
@@ -67,6 +69,64 @@ class MonthYearPickerBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (isYearOnly) {
+      // Annual Report Mode: Left Arrow, 📅 Year 2026, Right Arrow
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Previous Year Arrow
+            _buildArrowButton(
+              icon: Icons.chevron_left_rounded,
+              tooltip: 'Previous Year (${selectedDate.year - 1})',
+              onTap: () => _changeYear(-1),
+            ),
+            const SizedBox(width: 4),
+            // Year Pill
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.calendar_today_rounded, size: 14, color: primaryColor),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Year ${selectedDate.year}',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 4),
+            // Next Year Arrow
+            _buildArrowButton(
+              icon: Icons.chevron_right_rounded,
+              tooltip: 'Next Year (${selectedDate.year + 1})',
+              onTap: () => _changeYear(1),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Monthly Report Mode: Double + Single Arrows, 📅 August 2026, Single + Double Arrows
     final monthName = DateFormat('MMMM yyyy').format(selectedDate);
 
     return Container(
