@@ -311,27 +311,59 @@ class _ReportsScreenState extends State<ReportsScreen> {
           const SizedBox(height: 14),
 
           // Period Selector Bar & Toggle Container
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                _periodType == 'monthly' ? context.tr('monthly_report') : context.tr('annual_overview'),
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-                ),
-              ),
-              MonthYearPickerBar(
-                selectedDate: _selectedDate,
-                isDark: isDark,
-                primaryColor: const Color(0xFF6366F1),
-                isYearOnly: _periodType == 'yearly',
-                onDateChanged: (newDate) {
-                  setState(() => _selectedDate = newDate);
-                },
-              ),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth < 420) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _periodType == 'monthly' ? context.tr('monthly_report') : context.tr('annual_overview'),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: MonthYearPickerBar(
+                        selectedDate: _selectedDate,
+                        isDark: isDark,
+                        primaryColor: const Color(0xFF6366F1),
+                        isYearOnly: _periodType == 'yearly',
+                        onDateChanged: (newDate) {
+                          setState(() => _selectedDate = newDate);
+                        },
+                      ),
+                    ),
+                  ],
+                );
+              }
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    _periodType == 'monthly' ? context.tr('monthly_report') : context.tr('annual_overview'),
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                    ),
+                  ),
+                  MonthYearPickerBar(
+                    selectedDate: _selectedDate,
+                    isDark: isDark,
+                    primaryColor: const Color(0xFF6366F1),
+                    isYearOnly: _periodType == 'yearly',
+                    onDateChanged: (newDate) {
+                      setState(() => _selectedDate = newDate);
+                    },
+                  ),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 12),
 
@@ -402,47 +434,63 @@ class _ReportsScreenState extends State<ReportsScreen> {
             child: Column(
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _periodType == 'monthly'
-                              ? 'Total Income (${DateFormat('MMMM yyyy').format(_selectedDate)})'
-                              : 'Total Income (${_selectedDate.year})',
-                          style: TextStyle(color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary, fontSize: 12, fontWeight: FontWeight.w600),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          Formatters.currency(report.totalIncome, symbol: themeProvider.currencySymbol),
-                          style: const TextStyle(
-                            color: AppColors.income,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _periodType == 'monthly' ? context.tr('monthly_income') : context.tr('annual_income'),
+                            style: TextStyle(
+                              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 4),
+                          FittedBox(
+                            alignment: Alignment.centerLeft,
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              Formatters.currency(report.totalIncome, symbol: themeProvider.currencySymbol),
+                              style: const TextStyle(
+                                color: AppColors.income,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          _periodType == 'monthly'
-                              ? 'Total Expenses (${DateFormat('MMMM yyyy').format(_selectedDate)})'
-                              : 'Total Expenses (${_selectedDate.year})',
-                          style: TextStyle(color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary, fontSize: 12, fontWeight: FontWeight.w600),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          Formatters.currency(report.totalExpense, symbol: themeProvider.currencySymbol),
-                          style: const TextStyle(
-                            color: AppColors.expense,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            _periodType == 'monthly' ? context.tr('monthly_expenses') : context.tr('annual_expenses'),
+                            style: TextStyle(
+                              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 4),
+                          FittedBox(
+                            alignment: Alignment.centerRight,
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              Formatters.currency(report.totalExpense, symbol: themeProvider.currencySymbol),
+                              style: const TextStyle(
+                                color: AppColors.expense,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -450,37 +498,63 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 Divider(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
                 const SizedBox(height: 14),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Net Savings', style: TextStyle(color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted, fontSize: 12, fontWeight: FontWeight.w600)),
-                        const SizedBox(height: 4),
-                        Text(
-                          Formatters.currency(report.netSavings, symbol: themeProvider.currencySymbol),
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            color: report.netSavings >= 0 ? const Color(0xFF6366F1) : AppColors.expense,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            context.tr('net_savings'),
+                            style: TextStyle(
+                              color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 4),
+                          FittedBox(
+                            alignment: Alignment.centerLeft,
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              Formatters.currency(report.netSavings, symbol: themeProvider.currencySymbol),
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                                color: report.netSavings >= 0 ? const Color(0xFF6366F1) : AppColors.expense,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text('Savings Rate', style: TextStyle(color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted, fontSize: 12, fontWeight: FontWeight.w600)),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${report.savingsRate.toStringAsFixed(1)}%',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF8B5CF6),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            'Savings Rate',
+                            style: TextStyle(
+                              color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 4),
+                          FittedBox(
+                            alignment: Alignment.centerRight,
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              '${report.savingsRate.toStringAsFixed(1)}%',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFF6366F1),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),

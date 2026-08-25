@@ -896,7 +896,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       child: Icon(
                         CategoryIconHelper.getIcon(tx.categoryIcon),
                         color: color,
-                        size: 18,
+                        size: 20,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -906,77 +906,92 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         children: [
                           Text(
                             tx.description,
-                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 14,
+                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 3),
                           Text(
                             '${tx.categoryName} • ${Formatters.dateShort(tx.transactionDate)}',
                             style: TextStyle(
                               fontSize: 11,
+                              fontWeight: FontWeight.w500,
                               color: isDark ? Colors.white60 : const Color(0xFF64748B),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    // Amount
-                    Text(
-                      '${isIncome ? '+' : '-'}${Formatters.currency(tx.amount, symbol: currency)}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                        color: isIncome ? const Color(0xFF0284C7) : const Color(0xFFBE123C),
-                      ),
-                    ),
                     const SizedBox(width: 8),
-                    // Edit Button (Soft Blue/Purple)
-                    IconButton(
-                      icon: const Icon(Icons.edit_rounded, size: 17, color: Color(0xFF6366F1)),
-                      tooltip: context.tr('edit'),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: () {
-                        showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          backgroundColor: Colors.transparent,
-                          builder: (_) => AddEditTransactionSheet(transactionToEdit: tx),
-                        );
-                      },
-                    ),
-                    const SizedBox(width: 8),
-                    // Delete Button (Soft Rose/Red)
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline_rounded, size: 17, color: Color(0xFFBE123C)),
-                      tooltip: context.tr('delete'),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: () async {
-                        final confirm = await showDialog<bool>(
-                          context: context,
-                          builder: (ctx) => AlertDialog(
-                            title: Text(context.tr('delete'), style: const TextStyle(fontWeight: FontWeight.w800)),
-                            content: Text('Are you sure you want to delete "${tx.description}"?'),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(ctx, false),
-                                child: Text(context.tr('cancel')),
-                              ),
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFBE123C)),
-                                onPressed: () => Navigator.pop(ctx, true),
-                                child: Text(context.tr('delete'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-                              ),
-                            ],
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          '${isIncome ? '+' : '-'}${Formatters.currency(tx.amount, symbol: currency)}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900,
+                            color: isIncome ? const Color(0xFF059669) : const Color(0xFFE11D48),
                           ),
-                        );
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            InkWell(
+                              onTap: () {
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  backgroundColor: Colors.transparent,
+                                  builder: (_) => AddEditTransactionSheet(transactionToEdit: tx),
+                                );
+                              },
+                              borderRadius: BorderRadius.circular(6),
+                              child: Padding(
+                                padding: const EdgeInsets.all(3),
+                                child: Icon(Icons.edit_rounded, size: 15, color: isDark ? Colors.white60 : const Color(0xFF6366F1)),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            InkWell(
+                              onTap: () async {
+                                final confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    title: Text(context.tr('delete'), style: const TextStyle(fontWeight: FontWeight.w800)),
+                                    content: Text('Are you sure you want to delete "${tx.description}"?'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(ctx, false),
+                                        child: Text(context.tr('cancel')),
+                                      ),
+                                      ElevatedButton(
+                                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFBE123C)),
+                                        onPressed: () => Navigator.pop(ctx, true),
+                                        child: Text(context.tr('delete'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                                      ),
+                                    ],
+                                  ),
+                                );
 
-                        if (confirm == true) {
-                          await txProvider.deleteTransaction(tx.id);
-                        }
-                      },
+                                if (confirm == true) {
+                                  await txProvider.deleteTransaction(tx.id);
+                                }
+                              },
+                              borderRadius: BorderRadius.circular(6),
+                              child: const Padding(
+                                padding: EdgeInsets.all(3),
+                                child: Icon(Icons.delete_outline_rounded, size: 15, color: Color(0xFFE11D48)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ],
                 ),

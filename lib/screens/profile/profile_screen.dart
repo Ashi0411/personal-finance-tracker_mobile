@@ -480,7 +480,7 @@ class ProfileScreen extends StatelessWidget {
             borderRadius: 18,
             glowColor: const Color(0xFF6366F1),
             color: isDark ? AppColors.darkCard : AppColors.lightCard,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Row(
               children: [
                 Container(
@@ -491,34 +491,39 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   child: const Icon(Icons.switch_account_rounded, color: Color(0xFF6366F1), size: 20),
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         context.tr('switch_account'),
-                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
+                      const SizedBox(height: 2),
                       Text(
-                        '${authProvider.savedAccounts.length} ${context.tr("saved_accounts").toLowerCase()}',
-                        style: TextStyle(fontSize: 12, color: isDark ? Colors.white60 : const Color(0xFF64748B)),
+                        '${authProvider.savedAccounts.length} saved accounts',
+                        style: TextStyle(fontSize: 11, color: isDark ? Colors.white60 : const Color(0xFF64748B)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
                 ),
-                ElevatedButton.icon(
+                const SizedBox(width: 8),
+                ElevatedButton(
                   onPressed: () => AccountSwitcherSheet.show(context),
-                  icon: const Icon(Icons.add_rounded, size: 16),
-                  label: const Text(
-                    'Add / Switch',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
-                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF6366F1),
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: const Text(
+                    '+ Switch',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
                   ),
                 ),
               ],
