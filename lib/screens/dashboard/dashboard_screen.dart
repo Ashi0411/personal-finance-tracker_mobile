@@ -371,11 +371,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildPeriodSelector(bool isDark, String monthName) {
     final titleWidget = Row(
       mainAxisSize: MainAxisSize.min,
-      children: const [
-        Text('💎 ', style: TextStyle(fontSize: 18)),
-        Icon(Icons.pie_chart_rounded, color: Color(0xFF2563EB), size: 22),
-        SizedBox(width: 8),
-        Text(
+      children: [
+        Image.asset('assets/images/logo.png', height: 26, width: 26, fit: BoxFit.contain),
+        const SizedBox(width: 10),
+        const Text(
           'Monthly Overview',
           style: TextStyle(
             fontSize: 20,
