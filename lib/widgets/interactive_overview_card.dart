@@ -209,7 +209,7 @@ class _InteractiveOverviewCardState extends State<InteractiveOverviewCard> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOutCubic,
-        transform: Matrix4.translationValues(0, _isHovered ? -5 : 0, 0),
+        transform: Matrix4.translationValues(0, _isHovered ? -4 : 0, 0),
         decoration: BoxDecoration(
           color: widget.bgColor,
           borderRadius: BorderRadius.circular(20),
@@ -219,7 +219,7 @@ class _InteractiveOverviewCardState extends State<InteractiveOverviewCard> {
           ),
           boxShadow: [
             BoxShadow(
-              color: widget.primaryColor.withValues(alpha: _isHovered ? 0.22 : 0.05),
+              color: widget.primaryColor.withValues(alpha: _isHovered ? 0.22 : 0.06),
               blurRadius: _isHovered ? 16 : 8,
               offset: Offset(0, _isHovered ? 6 : 2),
             ),
@@ -231,52 +231,76 @@ class _InteractiveOverviewCardState extends State<InteractiveOverviewCard> {
             onTap: () => _showDetailedModal(context),
             borderRadius: BorderRadius.circular(20),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
                 children: [
-                  // Emoji + icon
-                  Text(widget.emoji, style: const TextStyle(fontSize: 24)),
-                  const SizedBox(height: 2),
-                  Icon(widget.icon, color: widget.primaryColor, size: 15),
-                  const SizedBox(height: 4),
-                  Text(
-                    widget.title,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: widget.primaryColor.withValues(alpha: 0.9),
+                  // Left: Emoji + Icon badge
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: widget.isDark ? 0.08 : 0.6),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: widget.borderColor, width: 1),
                     ),
-                    textAlign: TextAlign.center,
+                    child: Text(widget.emoji, style: const TextStyle(fontSize: 22)),
                   ),
-                  const SizedBox(height: 3),
+                  const SizedBox(width: 14),
+
+                  // Center: Title & Tap for details
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(widget.icon, color: widget.primaryColor, size: 14),
+                            const SizedBox(width: 5),
+                            Flexible(
+                              child: Text(
+                                widget.title,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: widget.isDark ? Colors.white : const Color(0xFF1E293B),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        Row(
+                          children: [
+                            Text(
+                              'Tap for breakdown',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: widget.primaryColor.withValues(alpha: 0.8),
+                              ),
+                            ),
+                            const SizedBox(width: 2),
+                            Icon(Icons.chevron_right_rounded, size: 12, color: widget.primaryColor.withValues(alpha: 0.8)),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+
+                  // Right: Formatted Currency Amount
                   FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
                       Formatters.currency(widget.amount, symbol: widget.currency),
                       style: TextStyle(
-                        fontSize: 20,
+                        fontSize: 18,
                         fontWeight: FontWeight.w900,
                         color: widget.primaryColor,
                         letterSpacing: -0.4,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 3),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Tap for details',
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w600,
-                          color: widget.primaryColor.withValues(alpha: 0.65),
-                        ),
-                      ),
-                      const SizedBox(width: 2),
-                      Icon(Icons.chevron_right_rounded, size: 11, color: widget.primaryColor.withValues(alpha: 0.65)),
-                    ],
                   ),
                 ],
               ),

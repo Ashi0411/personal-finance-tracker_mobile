@@ -78,9 +78,11 @@ class TransactionProvider extends ChangeNotifier {
     if (savedCats != null) {
       try {
         final List list = jsonDecode(savedCats);
-        _categories = list.map((item) => CategoryModel.fromJson(item)).toList();
-        notifyListeners();
-        return;
+        if (list.isNotEmpty) {
+          _categories = list.map((item) => CategoryModel.fromJson(item)).toList();
+          notifyListeners();
+          return;
+        }
       } catch (_) {}
     }
 
@@ -95,7 +97,11 @@ class TransactionProvider extends ChangeNotifier {
       final response = await _apiClient.get('/categories.php');
       if (response.success && response.data != null) {
         final List list = response.data is List ? response.data : (response.data['categories'] ?? []);
-        _categories = list.map((item) => CategoryModel.fromJson(item)).toList();
+        if (list.isNotEmpty) {
+          _categories = list.map((item) => CategoryModel.fromJson(item)).toList();
+        } else {
+          _loadDefaultCategories();
+        }
         await _saveCategoriesToStorage();
       } else {
         _loadDefaultCategories();
@@ -206,10 +212,21 @@ class TransactionProvider extends ChangeNotifier {
 
     if (_apiClient.isDemoMode) {
       if (savedTxJson != null) {
-        final List list = jsonDecode(savedTxJson);
-        _transactions = list.map((item) => TransactionModel.fromJson(item)).toList();
+        try {
+          final List list = jsonDecode(savedTxJson);
+          if (list.isNotEmpty) {
+            _transactions = list.map((item) => TransactionModel.fromJson(item)).toList();
+          } else {
+            _loadDefaultSeedTransactions();
+            await _saveToStorage();
+          }
+        } catch (_) {
+          _loadDefaultSeedTransactions();
+          await _saveToStorage();
+        }
       } else {
-        _transactions = [];
+        _loadDefaultSeedTransactions();
+        await _saveToStorage();
       }
       _setLoading(false);
       return;
@@ -219,22 +236,47 @@ class TransactionProvider extends ChangeNotifier {
       final response = await _apiClient.get('/transactions.php');
       if (response.success && response.data != null) {
         final List list = response.data is List ? response.data : (response.data['transactions'] ?? []);
-        _transactions = list.map((item) => TransactionModel.fromJson(item)).toList();
-        await _saveToStorage();
+        if (list.isNotEmpty) {
+          _transactions = list.map((item) => TransactionModel.fromJson(item)).toList();
+          await _saveToStorage();
+        } else if (savedTxJson != null) {
+          final List savedList = jsonDecode(savedTxJson);
+          if (savedList.isNotEmpty) {
+            _transactions = savedList.map((item) => TransactionModel.fromJson(item)).toList();
+          } else {
+            _loadDefaultSeedTransactions();
+            await _saveToStorage();
+          }
+        } else {
+          _loadDefaultSeedTransactions();
+          await _saveToStorage();
+        }
       } else {
         if (savedTxJson != null) {
           final List list = jsonDecode(savedTxJson);
-          _transactions = list.map((item) => TransactionModel.fromJson(item)).toList();
+          if (list.isNotEmpty) {
+            _transactions = list.map((item) => TransactionModel.fromJson(item)).toList();
+          } else {
+            _loadDefaultSeedTransactions();
+            await _saveToStorage();
+          }
         } else {
-          _transactions = [];
+          _loadDefaultSeedTransactions();
+          await _saveToStorage();
         }
       }
     } catch (_) {
       if (savedTxJson != null) {
         final List list = jsonDecode(savedTxJson);
-        _transactions = list.map((item) => TransactionModel.fromJson(item)).toList();
+        if (list.isNotEmpty) {
+          _transactions = list.map((item) => TransactionModel.fromJson(item)).toList();
+        } else {
+          _loadDefaultSeedTransactions();
+          await _saveToStorage();
+        }
       } else {
-        _transactions = [];
+        _loadDefaultSeedTransactions();
+        await _saveToStorage();
       }
     }
     _setLoading(false);
@@ -268,39 +310,23 @@ class TransactionProvider extends ChangeNotifier {
       createdAt: DateTime.now(),
     );
 
-    if (_apiClient.isDemoMode) {
-      await Future.delayed(const Duration(milliseconds: 150));
-      _transactions.insert(0, newTx);
-      await _saveToStorage();
-      _setLoading(false);
-      return true;
+    _transactions.insert(0, newTx);
+    await _saveToStorage();
+
+    if (!_apiClient.isDemoMode) {
+      try {
+        await _apiClient.post('/transactions.php', {
+          'category_id': categoryId,
+          'type': type,
+          'amount': amount,
+          'description': description,
+          'transaction_date': date.toIso8601String().split('T').first,
+        });
+      } catch (_) {}
     }
 
-    try {
-      final response = await _apiClient.post('/transactions.php', {
-        'category_id': categoryId,
-        'type': type,
-        'amount': amount,
-        'description': description,
-        'transaction_date': date.toIso8601String().split('T').first,
-      });
-
-      if (response.success) {
-        await fetchTransactions();
-        _setLoading(false);
-        return true;
-      } else {
-        _transactions.insert(0, newTx);
-        await _saveToStorage();
-        _setLoading(false);
-        return true;
-      }
-    } catch (_) {
-      _transactions.insert(0, newTx);
-      await _saveToStorage();
-      _setLoading(false);
-      return true;
-    }
+    _setLoading(false);
+    return true;
   }
 
   Future<bool> updateTransaction({
@@ -366,6 +392,185 @@ class TransactionProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     final jsonList = _transactions.map((tx) => tx.toJson()).toList();
     await prefs.setString('user_transactions', jsonEncode(jsonList));
+  }
+
+  void _loadDefaultSeedTransactions() {
+    _transactions = [
+      // August 2026
+      TransactionModel(
+        id: 101,
+        userId: 1,
+        categoryId: 1,
+        categoryName: 'Salary',
+        categoryIcon: 'briefcase',
+        categoryColor: '#0284C7',
+        type: 'income',
+        amount: 250000.0,
+        description: 'Monthly Salary (August)',
+        transactionDate: DateTime(2026, 8, 1),
+        createdAt: DateTime(2026, 8, 1),
+      ),
+      TransactionModel(
+        id: 102,
+        userId: 1,
+        categoryId: 3,
+        categoryName: 'Freelance',
+        categoryIcon: 'laptop',
+        categoryColor: '#6366F1',
+        type: 'income',
+        amount: 75000.0,
+        description: 'Mobile App Design Project',
+        transactionDate: DateTime(2026, 8, 10),
+        createdAt: DateTime(2026, 8, 10),
+      ),
+      TransactionModel(
+        id: 103,
+        userId: 1,
+        categoryId: 4,
+        categoryName: 'Investments',
+        categoryIcon: 'trending-up',
+        categoryColor: '#06B6D4',
+        type: 'income',
+        amount: 32000.0,
+        description: 'Stock Dividends & Interest',
+        transactionDate: DateTime(2026, 8, 15),
+        createdAt: DateTime(2026, 8, 15),
+      ),
+      TransactionModel(
+        id: 104,
+        userId: 1,
+        categoryId: 8,
+        categoryName: 'Housing & Rent',
+        categoryIcon: 'home',
+        categoryColor: '#F97316',
+        type: 'expense',
+        amount: 65000.0,
+        description: 'Apartment Monthly Rent',
+        transactionDate: DateTime(2026, 8, 2),
+        createdAt: DateTime(2026, 8, 2),
+      ),
+      TransactionModel(
+        id: 105,
+        userId: 1,
+        categoryId: 5,
+        categoryName: 'Food',
+        categoryIcon: 'utensils',
+        categoryColor: '#EF4444',
+        type: 'expense',
+        amount: 32500.0,
+        description: 'Monthly Groceries & Supermarket',
+        transactionDate: DateTime(2026, 8, 8),
+        createdAt: DateTime(2026, 8, 8),
+      ),
+      TransactionModel(
+        id: 106,
+        userId: 1,
+        categoryId: 6,
+        categoryName: 'Transport',
+        categoryIcon: 'car',
+        categoryColor: '#F43F5E',
+        type: 'expense',
+        amount: 18500.0,
+        description: 'Fuel & Vehicle Maintenance',
+        transactionDate: DateTime(2026, 8, 12),
+        createdAt: DateTime(2026, 8, 12),
+      ),
+      TransactionModel(
+        id: 107,
+        userId: 1,
+        categoryId: 10,
+        categoryName: 'Utilities & Bills',
+        categoryIcon: 'zap',
+        categoryColor: '#EAB308',
+        type: 'expense',
+        amount: 14200.0,
+        description: 'Electricity & Fiber Internet Bill',
+        transactionDate: DateTime(2026, 8, 18),
+        createdAt: DateTime(2026, 8, 18),
+      ),
+      TransactionModel(
+        id: 108,
+        userId: 1,
+        categoryId: 9,
+        categoryName: 'Entertainment',
+        categoryIcon: 'film',
+        categoryColor: '#8B5CF6',
+        type: 'expense',
+        amount: 8500.0,
+        description: 'Weekend Dining & Streaming',
+        transactionDate: DateTime(2026, 8, 22),
+        createdAt: DateTime(2026, 8, 22),
+      ),
+
+      // July 2026
+      TransactionModel(
+        id: 109,
+        userId: 1,
+        categoryId: 1,
+        categoryName: 'Salary',
+        categoryIcon: 'briefcase',
+        categoryColor: '#0284C7',
+        type: 'income',
+        amount: 250000.0,
+        description: 'Monthly Salary (July)',
+        transactionDate: DateTime(2026, 7, 1),
+        createdAt: DateTime(2026, 7, 1),
+      ),
+      TransactionModel(
+        id: 110,
+        userId: 1,
+        categoryId: 5,
+        categoryName: 'Food',
+        categoryIcon: 'utensils',
+        categoryColor: '#EF4444',
+        type: 'expense',
+        amount: 38000.0,
+        description: 'Groceries & Provisions',
+        transactionDate: DateTime(2026, 7, 15),
+        createdAt: DateTime(2026, 7, 15),
+      ),
+      TransactionModel(
+        id: 111,
+        userId: 1,
+        categoryId: 8,
+        categoryName: 'Housing & Rent',
+        categoryIcon: 'home',
+        categoryColor: '#F97316',
+        type: 'expense',
+        amount: 65000.0,
+        description: 'House Rent (July)',
+        transactionDate: DateTime(2026, 7, 2),
+        createdAt: DateTime(2026, 7, 2),
+      ),
+
+      // June 2026
+      TransactionModel(
+        id: 112,
+        userId: 1,
+        categoryId: 1,
+        categoryName: 'Salary',
+        categoryIcon: 'briefcase',
+        categoryColor: '#0284C7',
+        type: 'income',
+        amount: 250000.0,
+        description: 'Monthly Salary (June)',
+        transactionDate: DateTime(2026, 6, 1),
+        createdAt: DateTime(2026, 6, 1),
+      ),
+      TransactionModel(
+        id: 113,
+        userId: 1,
+        categoryId: 6,
+        categoryName: 'Transport',
+        categoryIcon: 'car',
+        categoryColor: '#F43F5E',
+        type: 'expense',
+        amount: 19000.0,
+        description: 'Fuel & Highway Tolls',
+        transactionDate: DateTime(2026, 6, 14),
+        createdAt: DateTime(2026, 6, 14),
+      ),
+    ];
   }
 
   void _loadDefaultCategories() {

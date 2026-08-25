@@ -38,9 +38,15 @@ class GoalProvider extends ChangeNotifier {
     if (_apiClient.isDemoMode) {
       if (savedGoalsJson != null) {
         final List list = jsonDecode(savedGoalsJson);
-        _goals = list.map((item) => GoalModel.fromJson(item)).toList();
+        if (list.isNotEmpty) {
+          _goals = list.map((item) => GoalModel.fromJson(item)).toList();
+        } else {
+          _loadDefaultSeedGoals();
+          await _saveToStorage();
+        }
       } else {
-        _goals = [];
+        _loadDefaultSeedGoals();
+        await _saveToStorage();
       }
       _setLoading(false);
       return;
@@ -50,25 +56,89 @@ class GoalProvider extends ChangeNotifier {
       final response = await _apiClient.get('/goals.php');
       if (response.success && response.data != null) {
         final List list = response.data is List ? response.data : (response.data['goals'] ?? []);
-        _goals = list.map((item) => GoalModel.fromJson(item)).toList();
+        if (list.isNotEmpty) {
+          _goals = list.map((item) => GoalModel.fromJson(item)).toList();
+        } else if (savedGoalsJson != null) {
+          final List savedList = jsonDecode(savedGoalsJson);
+          if (savedList.isNotEmpty) {
+            _goals = savedList.map((item) => GoalModel.fromJson(item)).toList();
+          } else {
+            _loadDefaultSeedGoals();
+          }
+        } else {
+          _loadDefaultSeedGoals();
+        }
         await _saveToStorage();
       } else {
         if (savedGoalsJson != null) {
           final List list = jsonDecode(savedGoalsJson);
-          _goals = list.map((item) => GoalModel.fromJson(item)).toList();
+          if (list.isNotEmpty) {
+            _goals = list.map((item) => GoalModel.fromJson(item)).toList();
+          } else {
+            _loadDefaultSeedGoals();
+            await _saveToStorage();
+          }
         } else {
-          _goals = [];
+          _loadDefaultSeedGoals();
+          await _saveToStorage();
         }
       }
     } catch (_) {
       if (savedGoalsJson != null) {
         final List list = jsonDecode(savedGoalsJson);
-        _goals = list.map((item) => GoalModel.fromJson(item)).toList();
+        if (list.isNotEmpty) {
+          _goals = list.map((item) => GoalModel.fromJson(item)).toList();
+        } else {
+          _loadDefaultSeedGoals();
+          await _saveToStorage();
+        }
       } else {
-        _goals = [];
+        _loadDefaultSeedGoals();
+        await _saveToStorage();
       }
     }
     _setLoading(false);
+  }
+
+  void _loadDefaultSeedGoals() {
+    _goals = [
+      GoalModel(
+        id: 1,
+        userId: 1,
+        name: 'Emergency Fund',
+        targetAmount: 200000.0,
+        currentAmount: 145000.0,
+        targetDate: DateTime(2026, 12, 31),
+        icon: 'shield',
+        color: '#10B981',
+        isCompleted: false,
+        createdAt: DateTime(2026, 1, 1),
+      ),
+      GoalModel(
+        id: 2,
+        userId: 1,
+        name: 'New Laptop',
+        targetAmount: 350000.0,
+        currentAmount: 210000.0,
+        targetDate: DateTime(2026, 10, 15),
+        icon: 'laptop',
+        color: '#6366F1',
+        isCompleted: false,
+        createdAt: DateTime(2026, 3, 1),
+      ),
+      GoalModel(
+        id: 3,
+        userId: 1,
+        name: 'Family Vacation',
+        targetAmount: 150000.0,
+        currentAmount: 150000.0,
+        targetDate: DateTime(2026, 8, 1),
+        icon: 'plane',
+        color: '#F59E0B',
+        isCompleted: true,
+        createdAt: DateTime(2026, 2, 1),
+      ),
+    ];
   }
 
   Future<bool> addGoal({
