@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/localization/app_strings.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_text_field.dart';
@@ -240,6 +242,49 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
+  void _showLanguageSelector(BuildContext context) {
+    final langProvider = Provider.of<LanguageProvider>(context, listen: false);
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: Text(context.tr('select_language'), style: const TextStyle(fontWeight: FontWeight.w800)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Text('🇺🇸', style: TextStyle(fontSize: 24)),
+                title: const Text('English (US)', style: TextStyle(fontWeight: FontWeight.w700)),
+                trailing: langProvider.isEnglish
+                    ? const Icon(Icons.check_circle_rounded, color: Color(0xFF6366F1))
+                    : null,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                onTap: () {
+                  langProvider.setLanguage('en');
+                  Navigator.pop(ctx);
+                },
+              ),
+              const SizedBox(height: 8),
+              ListTile(
+                leading: const Text('🇱🇰', style: TextStyle(fontSize: 24)),
+                title: const Text('සිංහල (Sinhala)', style: TextStyle(fontWeight: FontWeight.w700)),
+                trailing: langProvider.isSinhala
+                    ? const Icon(Icons.check_circle_rounded, color: Color(0xFF6366F1))
+                    : null,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                onTap: () {
+                  langProvider.setLanguage('si');
+                  Navigator.pop(ctx);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   void _showCurrencySelector(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     final currencies = ['\$', '€', '£', '₹', '¥', 'Rs', 'AED', 'CAD', 'AUD'];
@@ -340,14 +385,31 @@ class ProfileScreen extends StatelessWidget {
               children: [
                 ListTile(
                   leading: const Icon(Icons.manage_accounts_outlined, color: AppColors.primary, size: 20),
-                  title: const Text('Edit Account Info', style: TextStyle(fontWeight: FontWeight.w600)),
+                  title: Text(context.tr('personal_details'), style: const TextStyle(fontWeight: FontWeight.w600)),
                   trailing: const Icon(Icons.chevron_right, size: 20),
                   onTap: () => _showEditProfileDialog(context),
                 ),
                 const Divider(height: 1),
                 ListTile(
+                  leading: const Icon(Icons.translate_rounded, color: Color(0xFF6366F1), size: 20),
+                  title: Text(context.tr('language'), style: const TextStyle(fontWeight: FontWeight.w600)),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        Provider.of<LanguageProvider>(context).isSinhala ? '🇱🇰 සිංහල' : '🇺🇸 English',
+                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF6366F1)),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.chevron_right, size: 20),
+                    ],
+                  ),
+                  onTap: () => _showLanguageSelector(context),
+                ),
+                const Divider(height: 1),
+                ListTile(
                   leading: const Icon(Icons.dark_mode_outlined, color: AppColors.savings, size: 20),
-                  title: const Text('Dark Mode Theme', style: TextStyle(fontWeight: FontWeight.w600)),
+                  title: Text(context.tr('dark_mode'), style: const TextStyle(fontWeight: FontWeight.w600)),
                   trailing: Switch.adaptive(
                     value: themeProvider.isDarkMode,
                     activeTrackColor: AppColors.primary,
@@ -357,7 +419,7 @@ class ProfileScreen extends StatelessWidget {
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.attach_money_rounded, color: AppColors.income, size: 20),
-                  title: const Text('Default Currency', style: TextStyle(fontWeight: FontWeight.w600)),
+                  title: Text(context.tr('currency'), style: const TextStyle(fontWeight: FontWeight.w600)),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [

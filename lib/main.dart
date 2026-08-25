@@ -7,6 +7,7 @@ import 'core/theme/app_theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/budget_provider.dart';
 import 'providers/goal_provider.dart';
+import 'providers/language_provider.dart';
 import 'providers/report_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/transaction_provider.dart';
@@ -27,10 +28,14 @@ void main() async {
   final themeProvider = ThemeProvider();
   await themeProvider.initialize();
 
+  final languageProvider = LanguageProvider();
+  await languageProvider.initialize();
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: themeProvider),
+        ChangeNotifierProvider.value(value: languageProvider),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => TransactionProvider()),
         ChangeNotifierProvider(create: (_) => BudgetProvider()),

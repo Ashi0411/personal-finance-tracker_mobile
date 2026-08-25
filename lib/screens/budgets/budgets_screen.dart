@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/localization/app_strings.dart';
 import '../../core/utils/formatters.dart';
 import '../../models/budget_model.dart';
 import '../../providers/budget_provider.dart';
@@ -89,7 +90,7 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Budgets & Limits'),
+        title: Text(context.tr('monthly_budgets')),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded, size: 20),
@@ -104,7 +105,7 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
         onPressed: () => _openBudgetDialog(),
         backgroundColor: AppColors.primary,
         icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: const Text('New Budget', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+        label: Text(context.tr('add_budget'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
       ),
       body: budgetProvider.isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -148,12 +149,12 @@ class _BudgetsScreenState extends State<BudgetsScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Row(
-                              children: const [
-                                Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 20),
-                                SizedBox(width: 8),
+                              children: [
+                                const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 20),
+                                const SizedBox(width: 8),
                                 Text(
-                                  'Monthly Budget Overview',
-                                  style: TextStyle(
+                                  context.tr('budget_overview'),
+                                  style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w800,
                                     color: Colors.white,

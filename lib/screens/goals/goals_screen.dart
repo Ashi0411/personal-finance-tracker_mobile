@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/localization/app_strings.dart';
 import '../../core/utils/formatters.dart';
 import '../../models/goal_model.dart';
 import '../../providers/goal_provider.dart';
@@ -51,7 +52,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Savings Goals'),
+        title: Text(context.tr('savings_goals')),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh_rounded, size: 20),
@@ -63,7 +64,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
         onPressed: () => _openAddGoalDialog(),
         backgroundColor: const Color(0xFF6366F1),
         icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: const Text('New Goal', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+        label: Text(context.tr('add_goal'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
       ),
       body: goalProvider.isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -90,12 +91,12 @@ class _GoalsScreenState extends State<GoalsScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Row(
-                              children: const [
-                                Icon(Icons.track_changes_rounded, color: Colors.white, size: 20),
-                                SizedBox(width: 8),
+                              children: [
+                                const Icon(Icons.track_changes_rounded, color: Colors.white, size: 20),
+                                const SizedBox(width: 8),
                                 Text(
-                                  'Total Savings Progress',
-                                  style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800),
+                                  context.tr('overall_savings'),
+                                  style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800),
                                 ),
                               ],
                             ),

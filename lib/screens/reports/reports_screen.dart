@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/localization/app_strings.dart';
 import '../../core/utils/export_helper.dart';
 import '../../core/utils/formatters.dart';
 import '../../models/report_model.dart';
@@ -236,11 +237,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Financial Analytics'),
+        title: Text(context.tr('financial_analytics')),
         actions: [
           IconButton(
             icon: const Icon(Icons.file_download_outlined, size: 22),
-            tooltip: 'Export PDF / CSV',
+            tooltip: context.tr('export_statement'),
             onPressed: () => _showExportOptions(context, report),
           ),
           IconButton(
@@ -276,7 +277,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Export Financial Statement',
+                        context.tr('export_statement'),
                         style: TextStyle(
                           fontWeight: FontWeight.w800,
                           fontSize: 13,
@@ -284,7 +285,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         ),
                       ),
                       Text(
-                        'Download official PDF & CSV records',
+                        context.tr('export_subtitle'),
                         style: TextStyle(
                           fontSize: 11,
                           color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
@@ -314,7 +315,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                _periodType == 'monthly' ? 'Monthly Report' : 'Annual Overview',
+                _periodType == 'monthly' ? context.tr('monthly_report') : context.tr('annual_overview'),
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w800,

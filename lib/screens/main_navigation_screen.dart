@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/constants/app_colors.dart';
+import '../core/localization/app_strings.dart';
 import 'budgets/budgets_screen.dart';
 import 'dashboard/dashboard_screen.dart';
 import 'goals/goals_screen.dart';
@@ -37,12 +38,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     ];
 
     final navItems = [
-      _NavData(icon: Icons.dashboard_outlined, activeIcon: Icons.dashboard_rounded, label: 'Home'),
-      _NavData(icon: Icons.swap_horiz_rounded, activeIcon: Icons.swap_horiz_rounded, label: 'Activity'),
-      _NavData(icon: Icons.pie_chart_outline_rounded, activeIcon: Icons.pie_chart_rounded, label: 'Budgets'),
-      _NavData(icon: Icons.track_changes_rounded, activeIcon: Icons.track_changes_rounded, label: 'Goals'),
-      _NavData(icon: Icons.bar_chart_rounded, activeIcon: Icons.bar_chart_rounded, label: 'Analytics'),
-      _NavData(icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded, label: 'Profile'),
+      _NavData(icon: Icons.dashboard_outlined, activeIcon: Icons.dashboard_rounded, labelKey: 'nav_home'),
+      _NavData(icon: Icons.swap_horiz_rounded, activeIcon: Icons.swap_horiz_rounded, labelKey: 'nav_activity'),
+      _NavData(icon: Icons.pie_chart_outline_rounded, activeIcon: Icons.pie_chart_rounded, labelKey: 'nav_budgets'),
+      _NavData(icon: Icons.track_changes_rounded, activeIcon: Icons.track_changes_rounded, labelKey: 'nav_goals'),
+      _NavData(icon: Icons.bar_chart_rounded, activeIcon: Icons.bar_chart_rounded, labelKey: 'nav_analytics'),
+      _NavData(icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded, labelKey: 'nav_profile'),
     ];
 
     return Scaffold(
@@ -97,12 +98,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 class _NavData {
   final IconData icon;
   final IconData activeIcon;
-  final String label;
+  final String labelKey;
 
   const _NavData({
     required this.icon,
     required this.activeIcon,
-    required this.label,
+    required this.labelKey,
   });
 }
 
@@ -123,6 +124,7 @@ class _BottomNavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     const primaryColor = Color(0xFF6366F1);
     final activeBg = isDark ? const Color(0xFF312E81).withValues(alpha: 0.5) : const Color(0xFFEDE9FE);
+    final label = context.tr(item.labelKey);
 
     return Material(
       color: Colors.transparent,
@@ -163,9 +165,8 @@ class _BottomNavItem extends StatelessWidget {
               const SizedBox(height: 4),
               // Label Text
               Text(
-                item.label,
+                label,
                 style: TextStyle(
-                  fontFamily: 'Inter',
                   fontSize: 11,
                   fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                   color: isSelected

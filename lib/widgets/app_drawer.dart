@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/constants/app_colors.dart';
+import '../core/localization/app_strings.dart';
 import '../providers/auth_provider.dart';
+import '../providers/language_provider.dart';
 import '../providers/theme_provider.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/budgets/budgets_screen.dart';
@@ -21,6 +23,7 @@ class AppDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final langProvider = Provider.of<LanguageProvider>(context);
     final user = authProvider.currentUser;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -102,7 +105,7 @@ class AppDrawer extends StatelessWidget {
                 children: [
                   _DrawerMenuItem(
                     icon: Icons.dashboard_rounded,
-                    title: 'Overview / Home',
+                    title: context.tr('nav_home'),
                     isDark: isDark,
                     onTap: () {
                       Navigator.pop(context);
@@ -112,7 +115,7 @@ class AppDrawer extends StatelessWidget {
                   const SizedBox(height: 6),
                   _DrawerMenuItem(
                     icon: Icons.swap_horiz_rounded,
-                    title: 'Transactions',
+                    title: context.tr('nav_activity'),
                     isDark: isDark,
                     onTap: () {
                       Navigator.pop(context);
@@ -126,7 +129,7 @@ class AppDrawer extends StatelessWidget {
                   const SizedBox(height: 6),
                   _DrawerMenuItem(
                     icon: Icons.pie_chart_rounded,
-                    title: 'Budgets',
+                    title: context.tr('nav_budgets'),
                     isDark: isDark,
                     onTap: () {
                       Navigator.pop(context);
@@ -140,7 +143,7 @@ class AppDrawer extends StatelessWidget {
                   const SizedBox(height: 6),
                   _DrawerMenuItem(
                     icon: Icons.track_changes_rounded,
-                    title: 'Savings Goals',
+                    title: context.tr('nav_goals'),
                     isDark: isDark,
                     onTap: () {
                       Navigator.pop(context);
@@ -154,7 +157,7 @@ class AppDrawer extends StatelessWidget {
                   const SizedBox(height: 6),
                   _DrawerMenuItem(
                     icon: Icons.category_rounded,
-                    title: 'Manage Categories',
+                    title: context.tr('add_category'),
                     isDark: isDark,
                     onTap: () {
                       Navigator.pop(context);
@@ -164,7 +167,7 @@ class AppDrawer extends StatelessWidget {
                   const SizedBox(height: 6),
                   _DrawerMenuItem(
                     icon: Icons.bar_chart_rounded,
-                    title: 'Financial Reports',
+                    title: context.tr('financial_analytics'),
                     isDark: isDark,
                     onTap: () {
                       Navigator.pop(context);
@@ -178,9 +181,10 @@ class AppDrawer extends StatelessWidget {
                   const SizedBox(height: 12),
                   Divider(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
                   const SizedBox(height: 6),
+
                   _DrawerMenuItem(
                     icon: Icons.person_rounded,
-                    title: 'Profile & Settings',
+                    title: context.tr('profile_settings'),
                     isDark: isDark,
                     onTap: () {
                       Navigator.pop(context);
@@ -192,6 +196,92 @@ class AppDrawer extends StatelessWidget {
                     },
                   ),
                   const SizedBox(height: 6),
+
+                  // Language Switcher Capsule Item
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF334155) : const Color(0xFFEDE9FE),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF6366F1).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(Icons.translate_rounded, color: Color(0xFF6366F1), size: 18),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            context.tr('language'),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
+                              color: isDark ? Colors.white : const Color(0xFF1E1B4B),
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(3),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              GestureDetector(
+                                onTap: () => langProvider.setLanguage('en'),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: langProvider.isEnglish ? const Color(0xFF6366F1) : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Text(
+                                    '🇺🇸 EN',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w800,
+                                      color: langProvider.isEnglish ? Colors.white : (isDark ? Colors.white70 : const Color(0xFF64748B)),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () => langProvider.setLanguage('si'),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: langProvider.isSinhala ? const Color(0xFF6366F1) : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Text(
+                                    '🇱🇰 සිං',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w800,
+                                      color: langProvider.isSinhala ? Colors.white : (isDark ? Colors.white70 : const Color(0xFF64748B)),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+
                   // Dark Mode Switch Item
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
@@ -215,11 +305,11 @@ class AppDrawer extends StatelessWidget {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            'Dark Mode',
+                            context.tr('dark_mode'),
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 14,
-                              color: isDark ? Colors.white : const Color(0xFF1E293B),
+                              color: isDark ? Colors.white : const Color(0xFF1E1B4B),
                             ),
                           ),
                         ),
@@ -300,73 +390,63 @@ class _DrawerMenuItemState extends State<_DrawerMenuItem> {
 
   @override
   Widget build(BuildContext context) {
+    final hoverBg = widget.isDark
+        ? const Color(0xFF312E81).withValues(alpha: 0.5)
+        : const Color(0xFFEDE9FE).withValues(alpha: 0.8);
+
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOutCubic,
-        transform: Matrix4.translationValues(_isHovered ? 4 : 0, _isHovered ? -3 : 0, 0),
+        duration: const Duration(milliseconds: 150),
+        transform: Matrix4.identity()..translate(0.0, _isHovered ? -2.0 : 0.0),
         decoration: BoxDecoration(
-          color: _isHovered
-              ? (widget.isDark ? const Color(0xFF312E81).withValues(alpha: 0.45) : const Color(0xFFEDE9FE))
-              : (widget.isDark ? const Color(0xFF1E293B) : Colors.white),
+          color: _isHovered ? hoverBg : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: _isHovered
-                ? const Color(0xFF6366F1)
-                : (widget.isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9)),
-            width: _isHovered ? 1.4 : 1.0,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF6366F1).withValues(alpha: _isHovered ? 0.2 : (widget.isDark ? 0.1 : 0.04)),
-              blurRadius: _isHovered ? 12 : 4,
-              offset: Offset(0, _isHovered ? 4 : 1),
-            ),
-          ],
+          boxShadow: _isHovered
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF6366F1).withValues(alpha: widget.isDark ? 0.25 : 0.12),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
         ),
         child: Material(
           color: Colors.transparent,
-          child: InkWell(
-            onTap: widget.onTap,
-            borderRadius: BorderRadius.circular(16),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF6366F1).withValues(alpha: _isHovered ? 0.25 : 0.12),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(
-                      widget.icon,
-                      color: const Color(0xFF6366F1),
-                      size: 19,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Text(
-                      widget.title,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 14,
-                        color: widget.isDark ? Colors.white : const Color(0xFF1E293B),
-                        letterSpacing: -0.2,
-                      ),
-                    ),
-                  ),
-                  Icon(
-                    Icons.chevron_right_rounded,
-                    size: 18,
-                    color: _isHovered ? const Color(0xFF6366F1) : Colors.grey.withValues(alpha: 0.4),
-                  ),
-                ],
+          child: ListTile(
+            dense: true,
+            leading: Container(
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                color: widget.isDark ? const Color(0xFF1E293B) : Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: widget.isDark ? const Color(0xFF334155) : const Color(0xFFEDE9FE),
+                ),
+              ),
+              child: Icon(
+                widget.icon,
+                color: const Color(0xFF6366F1),
+                size: 20,
               ),
             ),
+            title: Text(
+              widget.title,
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+                color: widget.isDark ? Colors.white : const Color(0xFF1E1B4B),
+              ),
+            ),
+            trailing: const Icon(
+              Icons.chevron_right_rounded,
+              size: 18,
+              color: Color(0xFF94A3B8),
+            ),
+            onTap: widget.onTap,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
         ),
       ),
@@ -393,25 +473,32 @@ class _SignOutButtonState extends State<_SignOutButton> {
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOutCubic,
-        transform: Matrix4.translationValues(0, _isHovered ? -3 : 0, 0),
+        duration: const Duration(milliseconds: 150),
+        transform: Matrix4.identity()..translate(0.0, _isHovered ? -2.0 : 0.0),
         decoration: BoxDecoration(
-          color: _isHovered
-              ? (widget.isDark ? const Color(0xFF881337).withValues(alpha: 0.4) : const Color(0xFFFFE4E6))
-              : (widget.isDark ? const Color(0xFF881337).withValues(alpha: 0.2) : const Color(0xFFFFF1F2)),
+          gradient: LinearGradient(
+            colors: _isHovered
+                ? [const Color(0xFFE11D48), const Color(0xFFBE123C)]
+                : (widget.isDark
+                    ? [const Color(0xFF881337).withValues(alpha: 0.4), const Color(0xFF4C0519).withValues(alpha: 0.6)]
+                    : [const Color(0xFFFFE4E6), const Color(0xFFFECDD3)]),
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: _isHovered ? const Color(0xFFE11D48) : const Color(0xFFFDA4AF),
+            color: widget.isDark ? const Color(0xFF9F1239) : const Color(0xFFFDA4AF),
             width: 1.2,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFFE11D48).withValues(alpha: _isHovered ? 0.25 : 0.06),
-              blurRadius: _isHovered ? 12 : 4,
-              offset: Offset(0, _isHovered ? 4 : 1),
-            ),
-          ],
+          boxShadow: _isHovered
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFFE11D48).withValues(alpha: 0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
         ),
         child: Material(
           color: Colors.transparent,
@@ -419,18 +506,22 @@ class _SignOutButtonState extends State<_SignOutButton> {
             onTap: widget.onTap,
             borderRadius: BorderRadius.circular(16),
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 16),
+              padding: const EdgeInsets.symmetric(vertical: 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(Icons.logout_rounded, color: Color(0xFFBE123C), size: 18),
-                  SizedBox(width: 8),
+                children: [
+                  Icon(
+                    Icons.logout_rounded,
+                    size: 18,
+                    color: _isHovered ? Colors.white : (widget.isDark ? const Color(0xFFFDA4AF) : const Color(0xFFBE123C)),
+                  ),
+                  const SizedBox(width: 8),
                   Text(
-                    'Sign Out',
+                    context.tr('sign_out'),
                     style: TextStyle(
-                      color: Color(0xFFBE123C),
                       fontWeight: FontWeight.w800,
                       fontSize: 14,
+                      color: _isHovered ? Colors.white : (widget.isDark ? const Color(0xFFFDA4AF) : const Color(0xFFBE123C)),
                     ),
                   ),
                 ],

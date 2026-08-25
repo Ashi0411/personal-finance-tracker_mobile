@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/localization/app_strings.dart';
 import '../../core/utils/formatters.dart';
 import '../../models/transaction_model.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/language_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../widgets/app_drawer.dart';
@@ -109,7 +111,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
 
     final currency = themeProvider.currencySymbol;
-    final monthName = DateFormat('MMMM yyyy').format(_selectedDate);
+    final monthName = AppStrings.formatMonth(context, _selectedDate.month, _selectedDate.year);
 
     return Scaffold(
       drawer: AppDrawer(onSelectTab: widget.onNavigateTab),
@@ -153,7 +155,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                             // Row 1: Monthly Income
                             InteractiveOverviewCard(
-                              title: 'Monthly Income',
+                              title: context.tr('monthly_income'),
                               amount: monthlyIncome,
                               currency: currency,
                               emoji: '💰',
@@ -169,7 +171,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                             // Row 2: Monthly Expenses
                             InteractiveOverviewCard(
-                              title: 'Monthly Expenses',
+                              title: context.tr('monthly_expenses'),
                               amount: monthlyExpenses,
                               currency: currency,
                               emoji: '💸',
@@ -185,7 +187,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                             // Row 3: Monthly Net Savings
                             InteractiveOverviewCard(
-                              title: 'Monthly Net Savings',
+                              title: context.tr('net_savings'),
                               amount: monthlyNetSavings,
                               currency: currency,
                               emoji: '💎',
@@ -203,7 +205,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       const SizedBox(height: 20),
                       // Income by Category Doughnut Chart Card (On Top)
                       _buildCategoryDoughnutCard(
-                        title: 'Income by Category',
+                        title: context.tr('income_by_category'),
                         icon: Icons.pie_chart_rounded,
                         iconColor: const Color(0xFF0284C7),
                         categoryMap: incomeCatMap,
@@ -216,7 +218,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                       // Expense by Category Doughnut Chart Card (Below)
                       _buildCategoryDoughnutCard(
-                        title: 'Expense by Category',
+                        title: context.tr('expense_by_category'),
                         icon: Icons.pie_chart_rounded,
                         iconColor: const Color(0xFFF43F5E),
                         categoryMap: expenseCatMap,
@@ -312,6 +314,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ],
           ),
           const Spacer(),
+          // Language Switcher Badge
+          GestureDetector(
+            onTap: () {
+              final langProvider = Provider.of<LanguageProvider>(context, listen: false);
+              langProvider.toggleLanguage();
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white24),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.translate_rounded, color: Colors.white, size: 14),
+                  const SizedBox(width: 4),
+                  Text(
+                    Provider.of<LanguageProvider>(context).isSinhala ? '🇱🇰 සිං' : '🇺🇸 EN',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
           // Profile Chip
           GestureDetector(
             onTap: () {
@@ -350,7 +383,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           // Logout Icon
           IconButton(
             icon: const Icon(Icons.logout_rounded, color: Colors.white70, size: 20),
-            tooltip: 'Sign Out',
+            tooltip: context.tr('sign_out'),
             onPressed: () async {
               final authProvider = Provider.of<AuthProvider>(context, listen: false);
               await authProvider.logout();
@@ -374,9 +407,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       children: [
         Image.asset('assets/images/logo.png', height: 26, width: 26, fit: BoxFit.contain),
         const SizedBox(width: 10),
-        const Text(
-          'Monthly Overview',
-          style: TextStyle(
+        Text(
+          context.tr('monthly_overview'),
+          style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.4,
@@ -504,7 +537,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         // Left Button: "+ Add Category"
         Expanded(
           child: _AnimatedLightActionButton(
-            label: '+ Add Category',
+            label: '+ ${context.tr("add_category")}',
             icon: Icons.category_rounded,
             isDark: isDark,
             onTap: () {
@@ -516,7 +549,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         // Right Button: "+ Add Transaction"
         Expanded(
           child: _AnimatedLightActionButton(
-            label: '+ Add Transaction',
+            label: '+ ${context.tr("add_transaction")}',
             icon: Icons.add_circle_rounded,
             isDark: isDark,
             onTap: () => _openAddTransactionSheet('expense'),
@@ -696,12 +729,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            children: const [
-              Icon(Icons.bar_chart_rounded, color: Color(0xFF4F46E5), size: 20),
-              SizedBox(width: 8),
+            children: [
+              const Icon(Icons.bar_chart_rounded, color: Color(0xFF4F46E5), size: 20),
+              const SizedBox(width: 8),
               Text(
-                'Overall Cash Flow',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+                context.tr('overall_cashflow'),
+                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
               ),
             ],
           ),
@@ -766,12 +799,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
-                children: const [
-                  Icon(Icons.history_rounded, color: Color(0xFF4F46E5), size: 20),
-                  SizedBox(width: 8),
+                children: [
+                  const Icon(Icons.history_rounded, color: Color(0xFF4F46E5), size: 20),
+                  const SizedBox(width: 8),
                   Text(
-                    'Recent Activities',
-                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+                    context.tr('recent_activities'),
+                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
                   ),
                 ],
               ),
@@ -795,7 +828,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'All Transactions',
+                      context.tr('view_all'),
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w800,
@@ -819,7 +852,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               padding: const EdgeInsets.symmetric(vertical: 24),
               child: Center(
                 child: Text(
-                  'No transactions found for this month.',
+                  context.tr('no_transactions'),
                   style: TextStyle(
                     color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                     fontSize: 13,
@@ -888,7 +921,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     // Edit Button (Soft Blue/Purple)
                     IconButton(
                       icon: const Icon(Icons.edit_rounded, size: 17, color: Color(0xFF6366F1)),
-                      tooltip: 'Edit',
+                      tooltip: context.tr('edit'),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                       onPressed: () {
@@ -904,24 +937,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     // Delete Button (Soft Rose/Red)
                     IconButton(
                       icon: const Icon(Icons.delete_outline_rounded, size: 17, color: Color(0xFFBE123C)),
-                      tooltip: 'Delete',
+                      tooltip: context.tr('delete'),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                       onPressed: () async {
                         final confirm = await showDialog<bool>(
                           context: context,
                           builder: (ctx) => AlertDialog(
-                            title: const Text('Delete Transaction', style: TextStyle(fontWeight: FontWeight.w800)),
+                            title: Text(context.tr('delete'), style: const TextStyle(fontWeight: FontWeight.w800)),
                             content: Text('Are you sure you want to delete "${tx.description}"?'),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.pop(ctx, false),
-                                child: const Text('Cancel'),
+                                child: Text(context.tr('cancel')),
                               ),
                               ElevatedButton(
                                 style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFBE123C)),
                                 onPressed: () => Navigator.pop(ctx, true),
-                                child: const Text('Delete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                                child: Text(context.tr('delete'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
                               ),
                             ],
                           ),
