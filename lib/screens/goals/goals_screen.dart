@@ -30,8 +30,8 @@ class _GoalsScreenState extends State<GoalsScreen> {
     });
   }
 
-  void _openAddGoalDialog() {
-    showDialog(context: context, builder: (_) => const AddGoalDialog());
+  void _openAddGoalDialog([GoalModel? goal]) {
+    showDialog(context: context, builder: (_) => AddGoalDialog(goalToEdit: goal));
   }
 
   void _openDepositDialog(GoalModel goal) {
@@ -60,8 +60,8 @@ class _GoalsScreenState extends State<GoalsScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openAddGoalDialog,
-        backgroundColor: AppColors.savings,
+        onPressed: () => _openAddGoalDialog(),
+        backgroundColor: const Color(0xFF6366F1),
         icon: const Icon(Icons.add_rounded, color: Colors.white),
         label: const Text('New Goal', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
       ),
@@ -72,23 +72,16 @@ class _GoalsScreenState extends State<GoalsScreen> {
               child: ListView(
                 padding: const EdgeInsets.only(left: 20, right: 20, top: 12, bottom: 90),
                 children: [
-                  // Overall Savings Card
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF7C3AED), Color(0xFF6366F1)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF7C3AED).withValues(alpha: 0.3),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
+                  // Overall Savings Card with 3D Elevation & Rich Gradient
+                  HoverLiftCard(
+                    liftOffset: -4,
+                    padding: const EdgeInsets.all(22),
+                    borderRadius: 24,
+                    glowColor: const Color(0xFF8B5CF6),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF7C3AED), Color(0xFF6366F1)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -96,40 +89,46 @@ class _GoalsScreenState extends State<GoalsScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
-                              'Total Savings Progress',
-                              style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w500),
+                            Row(
+                              children: const [
+                                Icon(Icons.track_changes_rounded, color: Colors.white, size: 20),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Total Savings Progress',
+                                  style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800),
+                                ),
+                              ],
                             ),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
+                                color: Colors.white.withValues(alpha: 0.22),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
                                 '${overallProg.toStringAsFixed(1)}% Achieved',
-                                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
+                                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 16),
                         Text(
                           Formatters.currency(totalSaved, symbol: themeProvider.currencySymbol),
-                          style: const TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.w800),
+                          style: const TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.w800, letterSpacing: -0.5),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Target: ${Formatters.currency(totalTarget, symbol: themeProvider.currencySymbol)}',
-                          style: const TextStyle(color: Colors.white70, fontSize: 13),
+                          style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13, fontWeight: FontWeight.w600),
                         ),
                         const SizedBox(height: 16),
                         ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
+                          borderRadius: BorderRadius.circular(8),
                           child: LinearProgressIndicator(
                             value: (overallProg / 100).clamp(0.0, 1.0),
                             minHeight: 8,
-                            backgroundColor: Colors.white24,
+                            backgroundColor: Colors.white.withValues(alpha: 0.25),
                             valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         ),
@@ -163,12 +162,13 @@ class _GoalsScreenState extends State<GoalsScreen> {
                       title: 'No Savings Goals Yet',
                       description: 'Create a savings goal for your vacation, emergency fund, or gadget.',
                       buttonText: 'Add First Goal',
-                      onButtonPressed: _openAddGoalDialog,
+                      onButtonPressed: () => _openAddGoalDialog(),
                     )
                   else
                     ...goals.map((g) {
                       final goalColor = CategoryIconHelper.parseColor(g.color);
                       final isComplete = g.isCompleted || g.progressPercentage >= 100;
+                      final daysLeft = g.daysRemaining;
 
                       return HoverLiftCard(
                         liftOffset: -3,
@@ -223,7 +223,9 @@ class _GoalsScreenState extends State<GoalsScreen> {
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        'Target: ${Formatters.date(g.targetDate)} (${g.daysRemaining} days left)',
+                                        daysLeft > 0
+                                            ? 'Target: ${Formatters.date(g.targetDate)} ($daysLeft days left)'
+                                            : (daysLeft == 0 ? 'Target Due Today' : 'Target Date: ${Formatters.date(g.targetDate)}'),
                                         style: TextStyle(
                                           color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
                                           fontSize: 12,
@@ -232,10 +234,46 @@ class _GoalsScreenState extends State<GoalsScreen> {
                                     ],
                                   ),
                                 ),
+                                const SizedBox(width: 6),
+                                // Edit Button (Soft Indigo)
                                 IconButton(
-                                  icon: const Icon(Icons.delete_outline_rounded, size: 20),
-                                  color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
-                                  onPressed: () => goalProvider.deleteGoal(g.id),
+                                  icon: const Icon(Icons.edit_rounded, size: 18, color: Color(0xFF6366F1)),
+                                  tooltip: 'Edit Goal',
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  onPressed: () => _openAddGoalDialog(g),
+                                ),
+                                const SizedBox(width: 6),
+                                // Delete Button (Soft Rose Red)
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Color(0xFFBE123C)),
+                                  tooltip: 'Delete Goal',
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  onPressed: () async {
+                                    final confirm = await showDialog<bool>(
+                                      context: context,
+                                      builder: (ctx) => AlertDialog(
+                                        title: const Text('Delete Savings Goal', style: TextStyle(fontWeight: FontWeight.w800)),
+                                        content: Text('Are you sure you want to delete "${g.name}"?'),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.pop(ctx, false),
+                                            child: const Text('Cancel'),
+                                          ),
+                                          ElevatedButton(
+                                            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFBE123C)),
+                                            onPressed: () => Navigator.pop(ctx, true),
+                                            child: const Text('Delete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+
+                                    if (confirm == true) {
+                                      await goalProvider.deleteGoal(g.id);
+                                    }
+                                  },
                                 ),
                               ],
                             ),
@@ -294,6 +332,7 @@ class _GoalsScreenState extends State<GoalsScreen> {
                                   side: BorderSide(color: goalColor.withValues(alpha: 0.5)),
                                   foregroundColor: goalColor,
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
                                 ),
                               ),
                             ),

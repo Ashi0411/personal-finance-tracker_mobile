@@ -78,7 +78,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 final isSelected = _currentIndex == index;
 
                 return Expanded(
-                  child: _AnimatedBottomNavItem(
+                  child: _BottomNavItem(
                     item: item,
                     isSelected: isSelected,
                     isDark: isDark,
@@ -106,13 +106,13 @@ class _NavData {
   });
 }
 
-class _AnimatedBottomNavItem extends StatefulWidget {
+class _BottomNavItem extends StatelessWidget {
   final _NavData item;
   final bool isSelected;
   final bool isDark;
   final VoidCallback onTap;
 
-  const _AnimatedBottomNavItem({
+  const _BottomNavItem({
     required this.item,
     required this.isSelected,
     required this.isDark,
@@ -120,96 +120,63 @@ class _AnimatedBottomNavItem extends StatefulWidget {
   });
 
   @override
-  State<_AnimatedBottomNavItem> createState() => _AnimatedBottomNavItemState();
-}
-
-class _AnimatedBottomNavItemState extends State<_AnimatedBottomNavItem> {
-  bool _isHovered = false;
-
-  @override
   Widget build(BuildContext context) {
     const primaryColor = Color(0xFF6366F1);
-    final isSelected = widget.isSelected;
-    final isDark = widget.isDark;
-
-    // Smooth, gentle color tones
     final activeBg = isDark ? const Color(0xFF312E81).withValues(alpha: 0.5) : const Color(0xFFEDE9FE);
-    final hoveredBg = isDark ? const Color(0xFF1E293B).withValues(alpha: 0.5) : const Color(0xFFF1F5F9).withValues(alpha: 0.6);
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeInOutCubic,
-        transform: Matrix4.translationValues(
-          0,
-          _isHovered ? -3 : (isSelected ? -2 : 0),
-          0,
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: widget.onTap,
-            borderRadius: BorderRadius.circular(16),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Icon with gentle pill container
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 220),
-                    curve: Curves.easeInOutCubic,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: isSelected ? activeBg : (_isHovered ? hoveredBg : Colors.transparent),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: isSelected
-                          ? [
-                              BoxShadow(
-                                color: primaryColor.withValues(alpha: 0.2),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ]
-                          : null,
-                    ),
-                    child: Icon(
-                      isSelected ? widget.item.activeIcon : widget.item.icon,
-                      size: isSelected ? 21 : 19,
-                      color: isSelected
-                          ? primaryColor
-                          : (_isHovered
-                              ? (isDark ? const Color(0xFFC7D2FE) : const Color(0xFF4F46E5))
-                              : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  // Label Text
-                  AnimatedDefaultTextStyle(
-                    duration: const Duration(milliseconds: 220),
-                    curve: Curves.easeInOutCubic,
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 11,
-                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                      color: isSelected
-                          ? primaryColor
-                          : (_isHovered
-                              ? (isDark ? Colors.white : const Color(0xFF1E293B))
-                              : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
-                      letterSpacing: -0.2,
-                    ),
-                    child: Text(
-                      widget.item.label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Icon with pill container only when selected
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                decoration: BoxDecoration(
+                  color: isSelected ? activeBg : Colors.transparent,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: primaryColor.withValues(alpha: 0.18),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Icon(
+                  isSelected ? item.activeIcon : item.icon,
+                  size: isSelected ? 21 : 19,
+                  color: isSelected
+                      ? primaryColor
+                      : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                ),
               ),
-            ),
+              const SizedBox(height: 4),
+              // Label Text
+              Text(
+                item.label,
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                  color: isSelected
+                      ? primaryColor
+                      : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                  letterSpacing: -0.2,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
         ),
       ),

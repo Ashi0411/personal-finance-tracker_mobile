@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../core/network/api_client.dart';
 import '../models/budget_model.dart';
 import '../models/category_model.dart';
+import '../models/transaction_model.dart';
 
 class BudgetProvider extends ChangeNotifier {
   final ApiClient _apiClient = ApiClient();
@@ -16,72 +17,118 @@ class BudgetProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  double get totalAllocated {
-    return _budgets.fold(0.0, (sum, b) => sum + b.allocatedAmount);
+  double totalAllocatedForMonth(String monthYear) {
+    return _budgets
+        .where((b) => b.monthYear == monthYear)
+        .fold(0.0, (sum, b) => sum + b.allocatedAmount);
   }
 
-  double get totalSpent {
-    return _budgets.fold(0.0, (sum, b) => sum + b.spentAmount);
+  double totalSpentForMonth(String monthYear) {
+    return _budgets
+        .where((b) => b.monthYear == monthYear)
+        .fold(0.0, (sum, b) => sum + b.spentAmount);
   }
 
-  double get overallPercentage {
-    if (totalAllocated <= 0) return 0.0;
-    return (totalSpent / totalAllocated) * 100;
+  double _calculateSpentForCategory(BudgetModel b, List<TransactionModel>? transactions, String monthYear) {
+    if (transactions == null || transactions.isEmpty) {
+      return b.spentAmount;
+    }
+
+    final parts = monthYear.split('-');
+    final year = int.tryParse(parts[0]) ?? 2026;
+    final month = int.tryParse(parts.length > 1 ? parts[1] : '8') ?? 8;
+
+    final catNameLower = b.categoryName.trim().toLowerCase();
+    final spent = transactions
+        .where((tx) =>
+            tx.type.toLowerCase() == 'expense' &&
+            tx.transactionDate.year == year &&
+            tx.transactionDate.month == month &&
+            (tx.categoryId == b.categoryId ||
+             tx.categoryName.trim().toLowerCase() == catNameLower))
+        .fold(0.0, (sum, tx) => sum + tx.amount);
+
+    return spent;
   }
 
-  Future<void> fetchBudgets() async {
+  Future<void> fetchBudgets({List<TransactionModel>? fallbackTransactions}) async {
     _setLoading(true);
     _errorMessage = null;
 
     final prefs = await SharedPreferences.getInstance();
     final savedBudgetsJson = prefs.getString('user_budgets');
 
+    List<BudgetModel> loadedBudgets = [];
+
     if (_apiClient.isDemoMode) {
       if (savedBudgetsJson != null) {
         final List list = jsonDecode(savedBudgetsJson);
-        _budgets = list.map((item) => BudgetModel.fromJson(item)).toList();
+        loadedBudgets = list.map((item) => BudgetModel.fromJson(item)).toList();
       } else {
-        _budgets = [];
+        // Default initial budgets specifically tagged for 2026-08 (August 2026)
+        loadedBudgets = [
+          BudgetModel(
+            id: 1,
+            userId: 1,
+            categoryId: 1,
+            categoryName: 'Food',
+            categoryIcon: 'restaurant',
+            categoryColor: '#3B82F6',
+            allocatedAmount: 15000.0,
+            spentAmount: 5000.0,
+            monthYear: '2026-08',
+          ),
+          BudgetModel(
+            id: 2,
+            userId: 1,
+            categoryId: 2,
+            categoryName: 'Transport',
+            categoryIcon: 'directions_car',
+            categoryColor: '#06B6D4',
+            allocatedAmount: 10000.0,
+            spentAmount: 6000.0,
+            monthYear: '2026-08',
+          ),
+        ];
       }
-      _setLoading(false);
-      return;
-    }
-
-    try {
-      final response = await _apiClient.get('/budgets.php');
-      if (response.success && response.data != null) {
-        final List list = response.data is List ? response.data : (response.data['budgets'] ?? []);
-        _budgets = list.map((item) => BudgetModel.fromJson(item)).toList();
-        await _saveToStorage();
-      } else {
+    } else {
+      try {
+        final response = await _apiClient.get('/budgets.php');
+        if (response.success && response.data != null) {
+          final List list = response.data is List ? response.data : (response.data['budgets'] ?? []);
+          loadedBudgets = list.map((item) => BudgetModel.fromJson(item)).toList();
+        } else if (savedBudgetsJson != null) {
+          final List list = jsonDecode(savedBudgetsJson);
+          loadedBudgets = list.map((item) => BudgetModel.fromJson(item)).toList();
+        }
+      } catch (_) {
         if (savedBudgetsJson != null) {
           final List list = jsonDecode(savedBudgetsJson);
-          _budgets = list.map((item) => BudgetModel.fromJson(item)).toList();
-        } else {
-          _budgets = [];
+          loadedBudgets = list.map((item) => BudgetModel.fromJson(item)).toList();
         }
       }
-    } catch (_) {
-      if (savedBudgetsJson != null) {
-        final List list = jsonDecode(savedBudgetsJson);
-        _budgets = list.map((item) => BudgetModel.fromJson(item)).toList();
-      } else {
-        _budgets = [];
-      }
     }
+
+    // Ensure all budgets have a valid monthYear (default to 2026-08 if empty)
+    _budgets = loadedBudgets.map((b) {
+      final mYear = b.monthYear.isEmpty ? '2026-08' : b.monthYear;
+      final actualSpent = _calculateSpentForCategory(b, fallbackTransactions, mYear);
+      return b.copyWith(monthYear: mYear, spentAmount: actualSpent);
+    }).toList();
+
+    await _saveToStorage();
     _setLoading(false);
   }
 
   Future<bool> setBudget({
     required CategoryModel category,
     required double allocatedAmount,
+    required String monthYear,
+    List<TransactionModel>? fallbackTransactions,
   }) async {
     _setLoading(true);
 
-    final now = DateTime.now();
-    final monthYear = '${now.year}-${now.month.toString().padLeft(2, '0')}';
-
-    final newBudget = BudgetModel(
+    final tempBudget = BudgetModel(
       id: DateTime.now().millisecondsSinceEpoch,
       userId: 1,
       categoryId: category.id,
@@ -93,9 +140,23 @@ class BudgetProvider extends ChangeNotifier {
       monthYear: monthYear,
     );
 
-    final existingIndex = _budgets.indexWhere((b) => b.categoryId == category.id);
+    final spent = _calculateSpentForCategory(tempBudget, fallbackTransactions, monthYear);
+    final newBudget = tempBudget.copyWith(spentAmount: spent);
+
+    final existingIndex = _budgets.indexWhere(
+      (b) =>
+          (b.categoryId == category.id || b.categoryName.toLowerCase() == category.name.toLowerCase()) &&
+          b.monthYear == monthYear,
+    );
+
     if (existingIndex != -1) {
-      _budgets[existingIndex] = _budgets[existingIndex].copyWith(allocatedAmount: allocatedAmount);
+      _budgets[existingIndex] = _budgets[existingIndex].copyWith(
+        allocatedAmount: allocatedAmount,
+        spentAmount: spent,
+        categoryName: category.name,
+        categoryColor: category.color,
+        categoryIcon: category.icon,
+      );
     } else {
       _budgets.add(newBudget);
     }

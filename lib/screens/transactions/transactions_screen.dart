@@ -226,10 +226,51 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                     Text(
                                       '${isIncome ? '+' : '-'}${Formatters.currency(tx.amount, symbol: themeProvider.currencySymbol)}',
                                       style: TextStyle(
-                                        fontSize: 16,
+                                        fontSize: 15,
                                         fontWeight: FontWeight.w800,
                                         color: isIncome ? AppColors.income : AppColors.expense,
                                       ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    // Edit Button (Soft Indigo)
+                                    IconButton(
+                                      icon: const Icon(Icons.edit_rounded, size: 18, color: Color(0xFF6366F1)),
+                                      tooltip: 'Edit',
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                      onPressed: () => _openAddTransactionSheet(tx),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    // Delete Button (Soft Rose Red)
+                                    IconButton(
+                                      icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Color(0xFFBE123C)),
+                                      tooltip: 'Delete',
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                      onPressed: () async {
+                                        final confirm = await showDialog<bool>(
+                                          context: context,
+                                          builder: (ctx) => AlertDialog(
+                                            title: const Text('Delete Transaction', style: TextStyle(fontWeight: FontWeight.w800)),
+                                            content: Text('Are you sure you want to delete "${tx.description}"?'),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(ctx, false),
+                                                child: const Text('Cancel'),
+                                              ),
+                                              ElevatedButton(
+                                                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFBE123C)),
+                                                onPressed: () => Navigator.pop(ctx, true),
+                                                child: const Text('Delete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+
+                                        if (confirm == true) {
+                                          await txProvider.deleteTransaction(tx.id);
+                                        }
+                                      },
                                     ),
                                   ],
                                 ),

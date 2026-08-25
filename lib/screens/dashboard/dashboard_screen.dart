@@ -768,43 +768,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ],
               ),
-              // "All Transactions" Interactive Button
-              InkWell(
+              // "All Transactions" Interactive Button with 3D Hover Lift
+              HoverLiftCard(
+                liftOffset: -3,
+                glowColor: const Color(0xFF6366F1),
+                borderRadius: 20,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                color: isDark ? const Color(0xFF312E81).withValues(alpha: 0.35) : const Color(0xFFEDE9FE),
+                border: Border.all(
+                  color: isDark ? const Color(0xFF6366F1) : const Color(0xFFDDD6FE),
+                  width: 1.2,
+                ),
                 onTap: () {
                   if (widget.onNavigateTab != null) {
                     widget.onNavigateTab!(1);
                   }
                 },
-                borderRadius: BorderRadius.circular(20),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF312E81).withValues(alpha: 0.35) : const Color(0xFFEDE9FE),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isDark ? const Color(0xFF6366F1) : const Color(0xFFDDD6FE),
-                      width: 1.2,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'All Transactions',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: isDark ? const Color(0xFFC7D2FE) : const Color(0xFF4F46E5),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.arrow_forward_rounded,
-                        size: 13,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'All Transactions',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
                         color: isDark ? const Color(0xFFC7D2FE) : const Color(0xFF4F46E5),
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      size: 13,
+                      color: isDark ? const Color(0xFFC7D2FE) : const Color(0xFF4F46E5),
+                    ),
+                  ],
                 ),
               ),
             ],

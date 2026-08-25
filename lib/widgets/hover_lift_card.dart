@@ -9,6 +9,7 @@ class HoverLiftCard extends StatefulWidget {
   final EdgeInsetsGeometry? padding;
   final EdgeInsetsGeometry? margin;
   final Color? color;
+  final Gradient? gradient;
   final Border? border;
   final List<BoxShadow>? baseShadow;
 
@@ -22,6 +23,7 @@ class HoverLiftCard extends StatefulWidget {
     this.padding,
     this.margin,
     this.color,
+    this.gradient,
     this.border,
     this.baseShadow,
   });
@@ -47,15 +49,20 @@ class _HoverLiftCardState extends State<HoverLiftCard> {
         margin: widget.margin,
         transform: Matrix4.translationValues(0, _isHovered ? widget.liftOffset : 0, 0),
         decoration: BoxDecoration(
-          color: widget.color ?? (isDark ? const Color(0xFF1E293B) : Colors.white),
+          color: widget.gradient != null
+              ? null
+              : (widget.color ?? (isDark ? const Color(0xFF1E293B) : Colors.white)),
+          gradient: widget.gradient,
           borderRadius: BorderRadius.circular(widget.borderRadius),
           border: widget.border ??
-              Border.all(
-                color: _isHovered
-                    ? effectiveGlowColor.withValues(alpha: 0.5)
-                    : (isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9)),
-                width: _isHovered ? 1.4 : 1.0,
-              ),
+              (widget.gradient != null
+                  ? null
+                  : Border.all(
+                      color: _isHovered
+                          ? effectiveGlowColor.withValues(alpha: 0.5)
+                          : (isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9)),
+                      width: _isHovered ? 1.4 : 1.0,
+                    )),
           boxShadow: _isHovered
               ? [
                   BoxShadow(

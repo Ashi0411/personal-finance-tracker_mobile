@@ -13,6 +13,8 @@ class ReportProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
+  List<TransactionModel> _cachedTransactions = [];
+
   FinancialReportModel get report => _report;
   String get periodType => _periodType;
   int get selectedYear => _selectedYear;
@@ -20,27 +22,33 @@ class ReportProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  void setPeriodType(String type) {
+  void setPeriodType(String type, {List<TransactionModel>? fallbackTransactions}) {
     _periodType = type;
-    fetchReport();
+    if (fallbackTransactions != null) _cachedTransactions = fallbackTransactions;
+    fetchReport(fallbackTransactions: _cachedTransactions);
   }
 
-  void setYear(int year) {
+  void setYear(int year, {List<TransactionModel>? fallbackTransactions}) {
     _selectedYear = year;
-    fetchReport();
+    if (fallbackTransactions != null) _cachedTransactions = fallbackTransactions;
+    fetchReport(fallbackTransactions: _cachedTransactions);
   }
 
-  void setMonth(int month) {
+  void setMonth(int month, {List<TransactionModel>? fallbackTransactions}) {
     _selectedMonth = month;
-    fetchReport();
+    if (fallbackTransactions != null) _cachedTransactions = fallbackTransactions;
+    fetchReport(fallbackTransactions: _cachedTransactions);
   }
 
   Future<void> fetchReport({List<TransactionModel>? fallbackTransactions}) async {
+    if (fallbackTransactions != null && fallbackTransactions.isNotEmpty) {
+      _cachedTransactions = fallbackTransactions;
+    }
     _setLoading(true);
     _errorMessage = null;
 
     if (_apiClient.isDemoMode) {
-      _calculateFromTransactions(fallbackTransactions ?? []);
+      _calculateFromTransactions(_cachedTransactions);
       _setLoading(false);
       return;
     }
@@ -66,10 +74,10 @@ class ReportProvider extends ChangeNotifier {
           cashflows: cfJson.map((cf) => MonthlyCashflowSummary.fromJson(cf)).toList(),
         );
       } else {
-        _calculateFromTransactions(fallbackTransactions ?? []);
+        _calculateFromTransactions(_cachedTransactions);
       }
     } catch (_) {
-      _calculateFromTransactions(fallbackTransactions ?? []);
+      _calculateFromTransactions(_cachedTransactions);
     }
     _setLoading(false);
   }
@@ -129,6 +137,28 @@ class ReportProvider extends ChangeNotifier {
       );
     }).toList();
 
+    // Generate 12 months of cashflow for the selected year
+    final List<MonthlyCashflowSummary> cashflows = [];
+    final monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    for (int m = 1; m <= 12; m++) {
+      double mIncome = 0;
+      double mExpense = 0;
+      for (final tx in transactions) {
+        if (tx.transactionDate.year == _selectedYear && tx.transactionDate.month == m) {
+          if (tx.type.toLowerCase() == 'income') {
+            mIncome += tx.amount;
+          } else {
+            mExpense += tx.amount;
+          }
+        }
+      }
+      cashflows.add(MonthlyCashflowSummary(
+        month: monthNames[m - 1],
+        income: mIncome,
+        expense: mExpense,
+      ));
+    }
+
     _report = FinancialReportModel(
       periodType: _periodType,
       periodValue: _periodType == 'monthly' ? '$_selectedYear-$_selectedMonth' : '$_selectedYear',
@@ -137,7 +167,7 @@ class ReportProvider extends ChangeNotifier {
       netSavings: income - expense,
       savingsRate: income > 0 ? (((income - expense) / income) * 100).clamp(0.0, 100.0) : 0.0,
       categoryBreakdowns: catList,
-      cashflows: [],
+      cashflows: cashflows,
     );
     notifyListeners();
   }

@@ -114,6 +114,48 @@ class GoalProvider extends ChangeNotifier {
     return true;
   }
 
+  Future<bool> updateGoal({
+    required int id,
+    required String name,
+    required double targetAmount,
+    required double currentAmount,
+    required DateTime targetDate,
+    String? icon,
+    String? color,
+  }) async {
+    _setLoading(true);
+
+    final index = _goals.indexWhere((g) => g.id == id);
+    if (index != -1) {
+      _goals[index] = _goals[index].copyWith(
+        name: name,
+        targetAmount: targetAmount,
+        currentAmount: currentAmount,
+        targetDate: targetDate,
+        icon: icon ?? _goals[index].icon,
+        color: color ?? _goals[index].color,
+        isCompleted: currentAmount >= targetAmount,
+      );
+      await _saveToStorage();
+
+      if (!_apiClient.isDemoMode) {
+        try {
+          await _apiClient.put('/goals.php?id=$id', {
+            'name': name,
+            'target_amount': targetAmount,
+            'current_amount': currentAmount,
+            'target_date': targetDate.toIso8601String().split('T').first,
+            'icon': icon ?? _goals[index].icon,
+            'color': color ?? _goals[index].color,
+          });
+        } catch (_) {}
+      }
+    }
+
+    _setLoading(false);
+    return true;
+  }
+
   Future<bool> addDeposit({required int goalId, required double depositAmount}) async {
     final index = _goals.indexWhere((g) => g.id == goalId);
     if (index != -1) {

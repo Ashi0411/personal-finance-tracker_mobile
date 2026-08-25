@@ -6,12 +6,18 @@ import '../../models/category_model.dart';
 import '../../providers/budget_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/transaction_provider.dart';
+import '../../widgets/category_icon_helper.dart';
 import '../../widgets/custom_text_field.dart';
 
 class AddEditBudgetDialog extends StatefulWidget {
   final BudgetModel? budgetToEdit;
+  final String monthYear;
 
-  const AddEditBudgetDialog({super.key, this.budgetToEdit});
+  const AddEditBudgetDialog({
+    super.key,
+    this.budgetToEdit,
+    required this.monthYear,
+  });
 
   @override
   State<AddEditBudgetDialog> createState() => _AddEditBudgetDialogState();
@@ -59,13 +65,15 @@ class _AddEditBudgetDialogState extends State<AddEditBudgetDialog> {
     final success = await budgetProvider.setBudget(
       category: category,
       allocatedAmount: amount,
+      monthYear: widget.monthYear,
+      fallbackTransactions: txProvider.transactions,
     );
 
     if (!mounted) return;
     if (success) {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Budget saved successfully!'), backgroundColor: AppColors.income),
+        const SnackBar(content: Text('Budget saved successfully! 🎉'), backgroundColor: AppColors.income),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -76,6 +84,7 @@ class _AddEditBudgetDialogState extends State<AddEditBudgetDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final txProvider = Provider.of<TransactionProvider>(context);
     final budgetProvider = Provider.of<BudgetProvider>(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
@@ -86,7 +95,12 @@ class _AddEditBudgetDialogState extends State<AddEditBudgetDialog> {
     }
 
     return AlertDialog(
-      title: Text(widget.budgetToEdit == null ? 'Set Category Budget' : 'Update Budget Limit'),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+      title: Text(
+        widget.budgetToEdit == null ? 'Set Category Budget' : 'Update Budget Limit',
+        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+      ),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -95,14 +109,97 @@ class _AddEditBudgetDialogState extends State<AddEditBudgetDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (widget.budgetToEdit == null) ...[
-                const Text('Expense Category', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                const Text(
+                  'Expense Category',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<int>(
                   initialValue: _selectedCategoryId,
+                  dropdownColor: isDark ? const Color(0xFF0F172A) : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  elevation: 12,
+                  menuMaxHeight: 320,
+                  icon: const Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: Color(0xFF6366F1),
+                    size: 22,
+                  ),
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(
+                        color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(
+                        color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(
+                        color: Color(0xFF6366F1),
+                        width: 1.5,
+                      ),
+                    ),
+                  ),
+                  selectedItemBuilder: (context) {
+                    return expenseCategories.map((cat) {
+                      final catColor = CategoryIconHelper.parseColor(cat.color);
+                      return Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: catColor.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              CategoryIconHelper.getIcon(cat.icon),
+                              color: catColor,
+                              size: 16,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            cat.name,
+                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                          ),
+                        ],
+                      );
+                    }).toList();
+                  },
                   items: expenseCategories.map((cat) {
+                    final catColor = CategoryIconHelper.parseColor(cat.color);
                     return DropdownMenuItem<int>(
                       value: cat.id,
-                      child: Text(cat.name),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(7),
+                            decoration: BoxDecoration(
+                              color: catColor.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              CategoryIconHelper.getIcon(cat.icon),
+                              color: catColor,
+                              size: 16,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            cat.name,
+                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                          ),
+                        ],
+                      ),
                     );
                   }).toList(),
                   onChanged: (val) {
@@ -110,16 +207,13 @@ class _AddEditBudgetDialogState extends State<AddEditBudgetDialog> {
                       _selectedCategoryId = val;
                     });
                   },
-                  decoration: const InputDecoration(
-                    contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
               ],
               CustomTextField(
                 controller: _amountController,
                 label: 'Monthly Limit (${themeProvider.currencySymbol})',
-                hint: '500.00',
+                hint: '15000.00',
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 validator: (val) {
                   if (val == null || val.trim().isEmpty) return 'Limit amount is required';
@@ -133,10 +227,19 @@ class _AddEditBudgetDialogState extends State<AddEditBudgetDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w600)),
+        ),
         ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF6366F1),
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+          ),
           onPressed: budgetProvider.isLoading ? null : _saveBudget,
-          child: const Text('Save Budget'),
+          child: const Text('Save Budget', style: TextStyle(fontWeight: FontWeight.w700)),
         ),
       ],
     );

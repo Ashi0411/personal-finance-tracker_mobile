@@ -10,6 +10,7 @@ import '../../providers/theme_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../widgets/category_icon_helper.dart';
 import '../../widgets/hover_lift_card.dart';
+import '../../widgets/month_year_picker_bar.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -20,6 +21,7 @@ class ReportsScreen extends StatefulWidget {
 
 class _ReportsScreenState extends State<ReportsScreen> {
   int _touchedIndex = -1;
+  DateTime _selectedDate = DateTime.now();
 
   @override
   void initState() {
@@ -129,6 +131,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final themeProvider = Provider.of<ThemeProvider>(context);
     final reportProvider = Provider.of<ReportProvider>(context);
+    final txProvider = Provider.of<TransactionProvider>(context);
 
     final report = reportProvider.report;
     final categories = report.categoryBreakdowns;
@@ -203,6 +206,22 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+                // Period Selector Bar
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: MonthYearPickerBar(
+                    selectedDate: _selectedDate,
+                    isDark: isDark,
+                    primaryColor: const Color(0xFF6366F1),
+                    onDateChanged: (newDate) {
+                      setState(() => _selectedDate = newDate);
+                      reportProvider.setYear(newDate.year);
+                      reportProvider.setMonth(newDate.month);
+                      reportProvider.fetchReport(fallbackTransactions: txProvider.transactions);
+                    },
+                  ),
+                ),
+                const SizedBox(height: 14),
                 // Period Toggle (Monthly vs Yearly)
                 Container(
                   padding: const EdgeInsets.all(4),
