@@ -7,6 +7,7 @@ import '../../core/localization/app_strings.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/language_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../widgets/account_switcher_sheet.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/hover_lift_card.dart';
@@ -461,6 +462,66 @@ class ProfileScreen extends StatelessWidget {
                   MaterialPageRoute(builder: (_) => const ServerSettingsScreen()),
                 );
               },
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Account Management & Add/Switch Account Button Card
+          Text(
+            'Accounts & Switcher',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          HoverLiftCard(
+            borderRadius: 18,
+            glowColor: const Color(0xFF6366F1),
+            color: isDark ? AppColors.darkCard : AppColors.lightCard,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF6366F1).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.switch_account_rounded, color: Color(0xFF6366F1), size: 20),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        context.tr('switch_account'),
+                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                      ),
+                      Text(
+                        '${authProvider.savedAccounts.length} ${context.tr("saved_accounts").toLowerCase()}',
+                        style: TextStyle(fontSize: 12, color: isDark ? Colors.white60 : const Color(0xFF64748B)),
+                      ),
+                    ],
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () => AccountSwitcherSheet.show(context),
+                  icon: const Icon(Icons.add_rounded, size: 16),
+                  label: const Text(
+                    'Add / Switch',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF6366F1),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 36),

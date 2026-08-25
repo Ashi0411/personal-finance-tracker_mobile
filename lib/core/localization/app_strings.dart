@@ -114,6 +114,15 @@ class AppStrings {
       'delete': 'Delete',
       'edit': 'Edit',
 
+      // Multi-Account Switcher
+      'switch_account': 'Switch Account',
+      'add_another_account': 'Add Another Account',
+      'active_account': 'Active',
+      'saved_accounts': 'Saved Accounts on Device',
+      'remove_account': 'Remove from Device',
+      'remove_account_msg': 'Are you sure you want to remove this account from this device?',
+      'switched_to': 'Switched to',
+
       // Months
       'month_1': 'January',
       'month_2': 'February',
@@ -237,6 +246,15 @@ class AppStrings {
       'confirm': 'තහවුරු කරන්න',
       'delete': 'මකන්න',
       'edit': 'සංස්කරණය',
+
+      // Multi-Account Switcher
+      'switch_account': 'ගිණුම මාරු කරන්න',
+      'add_another_account': 'වෙනත් ගිණුමක් එක් කරන්න',
+      'active_account': 'ක්‍රියාකාරී',
+      'saved_accounts': 'උපාංගයේ සුරකින ලද ගිණුම්',
+      'remove_account': 'උපාංගයෙන් ඉවත් කරන්න',
+      'remove_account_msg': 'මෙම ගිණුම මෙම උපාංගයෙන් ඉවත් කිරීමට ඔබට අවශ්‍ය බව සහතිකද?',
+      'switched_to': 'ගිණුම වෙත මාරු විය',
 
       // Months
       'month_1': 'ජනවාරි',
