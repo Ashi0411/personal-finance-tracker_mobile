@@ -142,14 +142,22 @@ class _LoginScreenState extends State<LoginScreen> {
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF6366F1), Color(0xFFD946EF)],
-              ),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF6366F1).withValues(alpha: 0.3),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
-            child: const Icon(Icons.shield_outlined, color: Colors.white, size: 22),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset('assets/images/logo.png', height: 28, width: 28, fit: BoxFit.contain),
+            ),
           ),
           const SizedBox(width: 12),
           Column(
@@ -190,34 +198,23 @@ class _LoginScreenState extends State<LoginScreen> {
             // Center Circular Shield Logo
             Center(
               child: Container(
-                width: 72,
-                height: 72,
+                width: 80,
+                height: 80,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFEDE9FE), Color(0xFFDDD6FE)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: Colors.white,
                   boxShadow: const [
                     BoxShadow(
                       color: Color(0x336366F1),
-                      blurRadius: 18,
-                      offset: Offset(0, 6),
+                      blurRadius: 20,
+                      offset: Offset(0, 8),
                     ),
                   ],
                 ),
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                      ),
-                    ),
-                    child: const Icon(Icons.shield_rounded, color: Colors.white, size: 26),
-                  ),
+                padding: const EdgeInsets.all(10),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(40),
+                  child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
                 ),
               ),
             ).animate().scale(duration: 400.ms),

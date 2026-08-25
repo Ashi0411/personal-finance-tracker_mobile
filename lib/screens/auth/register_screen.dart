@@ -98,14 +98,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF6366F1), Color(0xFFD946EF)],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(Icons.shield_outlined, color: Colors.white, size: 20),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: Image.asset('assets/images/logo.png', height: 26, width: 26, fit: BoxFit.contain),
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Column(
@@ -157,16 +158,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           children: [
                             Center(
                               child: Container(
-                                width: 68,
-                                height: 68,
-                                decoration: const BoxDecoration(
+                                width: 76,
+                                height: 76,
+                                decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  gradient: LinearGradient(
-                                    colors: [Color(0xFFEDE9FE), Color(0xFFDDD6FE)],
-                                  ),
+                                  color: Colors.white,
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Color(0x336366F1),
+                                      blurRadius: 18,
+                                      offset: Offset(0, 6),
+                                    ),
+                                  ],
                                 ),
-                                child: const Center(
-                                  child: Icon(Icons.person_add_alt_1_rounded, color: Color(0xFF6366F1), size: 30),
+                                padding: const EdgeInsets.all(8),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(40),
+                                  child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
                                 ),
                               ),
                             ).animate().scale(duration: 400.ms),

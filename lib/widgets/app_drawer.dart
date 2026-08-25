@@ -237,7 +237,7 @@ class AppDrawer extends StatelessWidget {
 
             // Sign Out Button (Soft Rose/Purple Mix)
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               child: _SignOutButton(
                 isDark: isDark,
                 onTap: () async {
@@ -250,6 +250,25 @@ class AppDrawer extends StatelessWidget {
                     );
                   }
                 },
+              ),
+            ),
+            // Logo Branding Tag
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.asset('assets/images/logo.png', height: 20, width: 20, fit: BoxFit.contain),
+                  const SizedBox(width: 8),
+                  Text(
+                    'FinanceTracker v1.0.0',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

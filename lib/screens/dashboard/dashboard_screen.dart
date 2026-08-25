@@ -272,14 +272,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const SizedBox(width: 6),
           // Logo & Subtitle
           Container(
-            padding: const EdgeInsets.all(7),
+            padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF6366F1), Color(0xFFD946EF)],
-              ),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(10),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            child: const Icon(Icons.shield_outlined, color: Colors.white, size: 18),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: Image.asset('assets/images/logo.png', height: 26, width: 26, fit: BoxFit.contain),
+            ),
           ),
           const SizedBox(width: 10),
           Column(
