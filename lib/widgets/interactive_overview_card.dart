@@ -37,6 +37,14 @@ class InteractiveOverviewCard extends StatefulWidget {
 
 class _InteractiveOverviewCardState extends State<InteractiveOverviewCard> {
   bool _isHovered = false;
+  bool _isPressed = false;
+
+  bool get _isBalanceCard =>
+      widget.emoji == '💎' ||
+      widget.title.toLowerCase().contains('saving') ||
+      widget.title.toLowerCase().contains('balance') ||
+      widget.title.contains('ඉතිරිකිරීම්') ||
+      widget.title.contains('ශේෂය');
 
   void _showDetailedModal(BuildContext context) {
     showModalBottomSheet(
@@ -48,11 +56,11 @@ class _InteractiveOverviewCardState extends State<InteractiveOverviewCard> {
 
         return Container(
           constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(ctx).size.height * 0.8,
+            maxHeight: MediaQuery.of(ctx).size.height * 0.75,
           ),
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            color: isDark ? const Color(0xFF0F172A) : Colors.white,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
           ),
           child: Column(
@@ -70,7 +78,8 @@ class _InteractiveOverviewCardState extends State<InteractiveOverviewCard> {
                 ),
               ),
               const SizedBox(height: 20),
-              // Header with icon and total
+
+              // Header with Icon and Total Amount
               Row(
                 children: [
                   Container(
@@ -80,7 +89,7 @@ class _InteractiveOverviewCardState extends State<InteractiveOverviewCard> {
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: widget.borderColor, width: 1.2),
                     ),
-                    child: Text(widget.emoji, style: const TextStyle(fontSize: 24)),
+                    child: Text(widget.emoji, style: const TextStyle(fontSize: 26)),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -89,10 +98,14 @@ class _InteractiveOverviewCardState extends State<InteractiveOverviewCard> {
                       children: [
                         Text(
                           widget.title,
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          ),
                         ),
                         Text(
-                          '${widget.monthName} • ${widget.transactions.length} Records',
+                          widget.monthName,
                           style: TextStyle(
                             fontSize: 12,
                             color: isDark ? Colors.white60 : const Color(0xFF64748B),
@@ -102,93 +115,176 @@ class _InteractiveOverviewCardState extends State<InteractiveOverviewCard> {
                       ],
                     ),
                   ),
-                  Text(
-                    Formatters.currency(widget.amount, symbol: widget.currency),
-                    style: TextStyle(
-                      fontSize: 19,
-                      fontWeight: FontWeight.w900,
-                      color: widget.primaryColor,
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      Formatters.currency(widget.amount, symbol: widget.currency),
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        color: widget.primaryColor,
+                      ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
-              const Divider(height: 1),
-              const SizedBox(height: 16),
-              Text(
-                'Activity Log',
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 10),
-              if (widget.transactions.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 36),
-                  child: Center(
-                    child: Column(
-                      children: [
-                        Icon(widget.icon, size: 36, color: Colors.grey.withValues(alpha: 0.4)),
-                        const SizedBox(height: 8),
-                        Text(
-                          'No records logged for ${widget.monthName}',
-                          style: TextStyle(
-                            color: isDark ? Colors.white60 : const Color(0xFF64748B),
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              else
-                Expanded(
-                  child: ListView.separated(
-                    itemCount: widget.transactions.length,
-                    separatorBuilder: (_, _) => const Divider(height: 1),
-                    itemBuilder: (context, index) {
-                      final tx = widget.transactions[index];
-                      final catColor = CategoryIconHelper.parseColor(tx.categoryColor);
+              const SizedBox(height: 18),
+              Divider(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+              const SizedBox(height: 14),
 
-                      return ListTile(
-                        contentPadding: const EdgeInsets.symmetric(vertical: 2),
-                        leading: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: catColor.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(
-                            CategoryIconHelper.getIcon(tx.categoryIcon),
-                            color: catColor,
-                            size: 18,
-                          ),
+              // If Balance Card: Show ONLY Net Balance Overview without mixing Income & Expense
+              if (_isBalanceCard) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                  decoration: BoxDecoration(
+                    color: widget.bgColor,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: widget.borderColor, width: 1.4),
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: widget.primaryColor.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
                         ),
-                        title: Text(
-                          tx.description,
-                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                        child: Icon(widget.icon, size: 36, color: widget.primaryColor),
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        'Total Net Balance (${widget.monthName})',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white70 : const Color(0xFF64748B),
                         ),
-                        subtitle: Text(
-                          '${tx.categoryName} • ${Formatters.dateShort(tx.transactionDate)}',
-                          style: const TextStyle(fontSize: 11),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        Formatters.currency(widget.amount, symbol: widget.currency),
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w900,
+                          color: widget.primaryColor,
+                          letterSpacing: -0.5,
                         ),
-                        trailing: Text(
-                          Formatters.currency(tx.amount, symbol: widget.currency),
+                      ),
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: (widget.amount >= 0 ? const Color(0xFF10B981) : const Color(0xFFEF4444)).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          widget.amount >= 0 ? '✓ Positive Cash Balance' : '⚠ Cash Deficit',
                           style: TextStyle(
+                            fontSize: 12,
                             fontWeight: FontWeight.w800,
-                            fontSize: 14,
-                            color: widget.primaryColor,
+                            color: widget.amount >= 0 ? const Color(0xFF059669) : const Color(0xFFDC2626),
                           ),
                         ),
-                      );
-                    },
+                      ),
+                    ],
                   ),
                 ),
-              const SizedBox(height: 12),
+                const Spacer(),
+              ] else ...[
+                // Income or Expense Records List
+                Text(
+                  'Itemized Activity Log',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                if (widget.transactions.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 36),
+                    child: Center(
+                      child: Column(
+                        children: [
+                          Icon(widget.icon, size: 36, color: Colors.grey.withValues(alpha: 0.4)),
+                          const SizedBox(height: 8),
+                          Text(
+                            'No records logged for ${widget.monthName}',
+                            style: TextStyle(
+                              color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: widget.transactions.length,
+                      separatorBuilder: (_, _) => Divider(
+                        color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                        height: 1,
+                      ),
+                      itemBuilder: (context, index) {
+                        final tx = widget.transactions[index];
+                        final catColor = CategoryIconHelper.parseColor(tx.categoryColor);
+
+                        return ListTile(
+                          contentPadding: const EdgeInsets.symmetric(vertical: 4),
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: catColor.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              CategoryIconHelper.getIcon(tx.categoryIcon),
+                              color: catColor,
+                              size: 18,
+                            ),
+                          ),
+                          title: Text(
+                            tx.description,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                            ),
+                          ),
+                          subtitle: Text(
+                            '${tx.categoryName} • ${Formatters.dateShort(tx.transactionDate)}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                            ),
+                          ),
+                          trailing: Text(
+                            Formatters.currency(tx.amount, symbol: widget.currency),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 14,
+                              color: widget.primaryColor,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+
+              const SizedBox(height: 14),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () => Navigator.pop(ctx),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
+                    backgroundColor: widget.primaryColor,
+                    foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   child: const Text('Close', style: TextStyle(fontWeight: FontWeight.w800)),
@@ -203,65 +299,67 @@ class _InteractiveOverviewCardState extends State<InteractiveOverviewCard> {
 
   @override
   Widget build(BuildContext context) {
+    final isElevated = _isPressed || _isHovered;
+
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOutCubic,
-        transform: Matrix4.translationValues(0, _isHovered ? -4 : 0, 0),
+        transform: Matrix4.translationValues(0, isElevated ? -5 : 0, 0),
         decoration: BoxDecoration(
           color: widget.bgColor,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(22),
           border: Border.all(
-            color: _isHovered ? widget.primaryColor : widget.borderColor,
-            width: _isHovered ? 1.8 : 1.2,
+            color: isElevated ? widget.primaryColor : widget.borderColor,
+            width: isElevated ? 2.0 : 1.2,
           ),
           boxShadow: [
             BoxShadow(
-              color: widget.primaryColor.withValues(alpha: _isHovered ? 0.22 : 0.06),
-              blurRadius: _isHovered ? 16 : 8,
-              offset: Offset(0, _isHovered ? 6 : 2),
+              color: widget.primaryColor.withValues(alpha: isElevated ? 0.28 : 0.08),
+              blurRadius: isElevated ? 20 : 8,
+              offset: Offset(0, isElevated ? 8 : 3),
             ),
           ],
         ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
+            onHighlightChanged: (val) => setState(() => _isPressed = val),
             onTap: () => _showDetailedModal(context),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(22),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              child: Row(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Left: Emoji + Icon badge
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: widget.isDark ? 0.08 : 0.6),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: widget.borderColor, width: 1),
-                    ),
-                    child: Text(widget.emoji, style: const TextStyle(fontSize: 22)),
-                  ),
-                  const SizedBox(width: 14),
-
-                  // Center: Title & Tap for details
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+                  // Row 1: Header with Emoji, Icon, Full Title, and "Tap for details >" Badge
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: widget.isDark ? 0.1 : 0.7),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: widget.borderColor, width: 1),
+                        ),
+                        child: Text(widget.emoji, style: const TextStyle(fontSize: 20)),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Row(
                           children: [
-                            Icon(widget.icon, color: widget.primaryColor, size: 14),
-                            const SizedBox(width: 5),
+                            Icon(widget.icon, color: widget.primaryColor, size: 16),
+                            const SizedBox(width: 6),
                             Flexible(
                               child: Text(
                                 widget.title,
                                 style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: widget.isDark ? Colors.white : const Color(0xFF1E293B),
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                  color: widget.isDark ? Colors.white : const Color(0xFF0F172A),
+                                  letterSpacing: -0.2,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -269,36 +367,46 @@ class _InteractiveOverviewCardState extends State<InteractiveOverviewCard> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 3),
-                        Row(
+                      ),
+                      const SizedBox(width: 8),
+                      // Tap Badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: widget.primaryColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              'Tap for breakdown',
+                              'Details',
                               style: TextStyle(
                                 fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: widget.primaryColor.withValues(alpha: 0.8),
+                                fontWeight: FontWeight.w700,
+                                color: widget.primaryColor,
                               ),
                             ),
                             const SizedBox(width: 2),
-                            Icon(Icons.chevron_right_rounded, size: 12, color: widget.primaryColor.withValues(alpha: 0.8)),
+                            Icon(Icons.chevron_right_rounded, size: 12, color: widget.primaryColor),
                           ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(height: 12),
 
-                  // Right: Formatted Currency Amount
+                  // Row 2: Prominent Large Formatted Amount (100% Unclipped)
                   FittedBox(
+                    alignment: Alignment.centerLeft,
                     fit: BoxFit.scaleDown,
                     child: Text(
                       Formatters.currency(widget.amount, symbol: widget.currency),
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 24,
                         fontWeight: FontWeight.w900,
                         color: widget.primaryColor,
-                        letterSpacing: -0.4,
+                        letterSpacing: -0.5,
                       ),
                     ),
                   ),

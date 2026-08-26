@@ -254,7 +254,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildTopHeader(BuildContext context, bool isDark, dynamic user) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF312E81)],
@@ -264,70 +264,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       child: Row(
         children: [
-          // Hamburger Menu Button
+          // 1. Hamburger Menu Button (Far Left Corner)
           Builder(
             builder: (ctx) => IconButton(
               icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 26),
               tooltip: 'Open Menu',
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
               onPressed: () => Scaffold.of(ctx).openDrawer(),
             ),
           ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(3),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(9),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.15),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: Image.asset('assets/images/logo.png', height: 24, width: 24, fit: BoxFit.contain),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      Text(
-                        'FinanceTracker',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 15,
-                          letterSpacing: -0.3,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        'Personal Finance',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 10,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
+          const SizedBox(width: 10),
+
+          // 2. Logo Container
+          Container(
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(9),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: Image.asset('assets/images/logo.png', height: 26, width: 26, fit: BoxFit.contain),
+            ),
           ),
-          const SizedBox(width: 6),
-          // Language Switcher Badge
+          const Spacer(),
+
+          // 3. Language Switcher Badge (Center-Right)
           GestureDetector(
             onTap: () {
               final langProvider = Provider.of<LanguageProvider>(context, listen: false);
@@ -358,7 +328,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
           const SizedBox(width: 8),
-          // Profile Chip
+
+          // 4. Profile Chip
           GestureDetector(
             onTap: () {
               if (widget.onNavigateTab != null) {
@@ -377,7 +348,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   UserAvatar(
                     name: user?.fullName ?? 'User',
                     avatarUrl: user?.avatarUrl,
-                    size: 26,
+                    size: 24,
                   ),
                   const SizedBox(width: 6),
                   Text(
@@ -392,11 +363,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 8),
-          // Logout Icon
+          const SizedBox(width: 10),
+
+          // 5. Logout Button (Far Right Corner)
           IconButton(
-            icon: const Icon(Icons.logout_rounded, color: Colors.white70, size: 20),
+            icon: const Icon(Icons.logout_rounded, color: Colors.white70, size: 22),
             tooltip: context.tr('sign_out'),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
             onPressed: () async {
               final authProvider = Provider.of<AuthProvider>(context, listen: false);
               await authProvider.logout();
