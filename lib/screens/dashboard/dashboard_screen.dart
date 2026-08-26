@@ -254,10 +254,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildTopHeader(BuildContext context, bool isDark, dynamic user) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF312E81)],
+          colors: [Color(0xFF1E293B), Color(0xFF334155)],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
@@ -274,7 +274,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               onPressed: () => Scaffold.of(ctx).openDrawer(),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
 
           // 2. Logo Container
           Container(
@@ -363,7 +363,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
 
           // 5. Logout Button (Far Right Corner)
           IconButton(
@@ -996,12 +996,15 @@ class _AnimatedLightActionButton extends StatefulWidget {
 
 class _AnimatedLightActionButtonState extends State<_AnimatedLightActionButton> {
   bool _isHovered = false;
+  bool _isPressed = false;
 
   @override
   Widget build(BuildContext context) {
-    // Soft pastel colors that transition smoothly without flashing
+    final isElevated = _isPressed || _isHovered;
+
+    // Soft pastel colors that transition smoothly
     final defaultBg = widget.isDark ? const Color(0xFF1E293B) : const Color(0xFFEEF2FF);
-    final hoveredBg = widget.isDark ? const Color(0xFF312E81).withValues(alpha: 0.4) : const Color(0xFFE0E7FF);
+    final hoveredBg = widget.isDark ? const Color(0xFF334155) : const Color(0xFFE0E7FF);
 
     final defaultBorder = widget.isDark ? const Color(0xFF334155) : const Color(0xFFC7D2FE);
     final hoveredBorder = widget.isDark ? const Color(0xFF6366F1) : const Color(0xFF818CF8);
@@ -1013,47 +1016,54 @@ class _AnimatedLightActionButtonState extends State<_AnimatedLightActionButton> 
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeInOutCubic,
-        transform: Matrix4.translationValues(0, _isHovered ? -4 : 0, 0),
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        transform: Matrix4.translationValues(0, isElevated ? -4 : 0, 0),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(30),
-          color: _isHovered ? hoveredBg : defaultBg,
+          color: isElevated ? hoveredBg : defaultBg,
           border: Border.all(
-            color: _isHovered ? hoveredBorder : defaultBorder,
-            width: _isHovered ? 1.6 : 1.2,
+            color: isElevated ? hoveredBorder : defaultBorder,
+            width: isElevated ? 1.6 : 1.2,
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF6366F1).withValues(alpha: _isHovered ? (widget.isDark ? 0.25 : 0.14) : 0.04),
-              blurRadius: _isHovered ? 14 : 6,
-              offset: Offset(0, _isHovered ? 6 : 2),
+              color: const Color(0xFF6366F1).withValues(alpha: isElevated ? (widget.isDark ? 0.3 : 0.2) : 0.04),
+              blurRadius: isElevated ? 14 : 6,
+              offset: Offset(0, isElevated ? 6 : 2),
             ),
           ],
         ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
+            onHighlightChanged: (val) => setState(() => _isPressed = val),
             onTap: widget.onTap,
             borderRadius: BorderRadius.circular(30),
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
                     widget.icon,
-                    size: 18,
+                    size: 17,
                     color: widget.isDark ? darkText : primaryText,
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    widget.label,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 13,
-                      color: widget.isDark ? Colors.white : primaryText,
-                      letterSpacing: 0.2,
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        widget.label,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13,
+                          color: widget.isDark ? Colors.white : primaryText,
+                          letterSpacing: 0.1,
+                        ),
+                        maxLines: 1,
+                      ),
                     ),
                   ),
                 ],

@@ -161,120 +161,117 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                               onDismissed: (_) {
                                 txProvider.deleteTransaction(tx.id);
                               },
-                              child: HoverLiftCard(
-                                liftOffset: -3,
-                                borderRadius: 18,
-                                glowColor: catColor,
-                                padding: const EdgeInsets.all(16),
-                                color: isDark ? AppColors.darkCard : AppColors.lightCard,
-                                onTap: () => _openAddTransactionSheet(tx),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: catColor.withValues(alpha: 0.15),
-                                        borderRadius: BorderRadius.circular(14),
+                                child: HoverLiftCard(
+                                  liftOffset: -3,
+                                  borderRadius: 18,
+                                  glowColor: catColor,
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                  color: isDark ? AppColors.darkCard : AppColors.lightCard,
+                                  onTap: () => _openAddTransactionSheet(tx),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: catColor.withValues(alpha: 0.15),
+                                          borderRadius: BorderRadius.circular(14),
+                                        ),
+                                        child: Icon(
+                                          CategoryIconHelper.getIcon(tx.categoryIcon),
+                                          color: catColor,
+                                          size: 20,
+                                        ),
                                       ),
-                                      child: Icon(
-                                        CategoryIconHelper.getIcon(tx.categoryIcon),
-                                        color: catColor,
-                                        size: 20,
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              tx.description,
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w800,
+                                                color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            const SizedBox(height: 3),
+                                            Text(
+                                              '${tx.categoryName} • ${Formatters.dateShort(tx.transactionDate)}',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w500,
+                                                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(width: 14),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                      const SizedBox(width: 8),
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.end,
                                         children: [
                                           Text(
-                                            tx.description,
+                                            '${isIncome ? '+' : '-'}${Formatters.currency(tx.amount, symbol: themeProvider.currencySymbol)}',
                                             style: TextStyle(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.w700,
-                                              color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w900,
+                                              color: isIncome ? const Color(0xFF059669) : const Color(0xFFE11D48),
                                             ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
                                           ),
                                           const SizedBox(height: 4),
                                           Row(
+                                            mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              Text(
-                                                tx.categoryName,
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                                                  fontWeight: FontWeight.w500,
+                                              InkWell(
+                                                onTap: () => _openAddTransactionSheet(tx),
+                                                borderRadius: BorderRadius.circular(6),
+                                                child: Padding(
+                                                  padding: const EdgeInsets.all(3),
+                                                  child: Icon(Icons.edit_rounded, size: 15, color: isDark ? Colors.white60 : const Color(0xFF6366F1)),
                                                 ),
                                               ),
-                                              const SizedBox(width: 6),
-                                              Text('•', style: TextStyle(color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted)),
-                                              const SizedBox(width: 6),
-                                              Text(
-                                                Formatters.dateShort(tx.transactionDate),
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted,
+                                              const SizedBox(width: 8),
+                                              InkWell(
+                                                onTap: () async {
+                                                  final confirm = await showDialog<bool>(
+                                                    context: context,
+                                                    builder: (ctx) => AlertDialog(
+                                                      title: const Text('Delete Transaction', style: TextStyle(fontWeight: FontWeight.w800)),
+                                                      content: Text('Are you sure you want to delete "${tx.description}"?'),
+                                                      actions: [
+                                                        TextButton(
+                                                          onPressed: () => Navigator.pop(ctx, false),
+                                                          child: const Text('Cancel'),
+                                                        ),
+                                                        ElevatedButton(
+                                                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFBE123C)),
+                                                          onPressed: () => Navigator.pop(ctx, true),
+                                                          child: const Text('Delete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  );
+
+                                                  if (confirm == true) {
+                                                    await txProvider.deleteTransaction(tx.id);
+                                                  }
+                                                },
+                                                borderRadius: BorderRadius.circular(6),
+                                                child: const Padding(
+                                                  padding: EdgeInsets.all(3),
+                                                  child: Icon(Icons.delete_outline_rounded, size: 15, color: Color(0xFFE11D48)),
                                                 ),
                                               ),
                                             ],
                                           ),
                                         ],
                                       ),
-                                    ),
-                                    Text(
-                                      '${isIncome ? '+' : '-'}${Formatters.currency(tx.amount, symbol: themeProvider.currencySymbol)}',
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w800,
-                                        color: isIncome ? AppColors.income : AppColors.expense,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    // Edit Button (Soft Indigo)
-                                    IconButton(
-                                      icon: const Icon(Icons.edit_rounded, size: 18, color: Color(0xFF6366F1)),
-                                      tooltip: 'Edit',
-                                      padding: EdgeInsets.zero,
-                                      constraints: const BoxConstraints(),
-                                      onPressed: () => _openAddTransactionSheet(tx),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    // Delete Button (Soft Rose Red)
-                                    IconButton(
-                                      icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Color(0xFFBE123C)),
-                                      tooltip: 'Delete',
-                                      padding: EdgeInsets.zero,
-                                      constraints: const BoxConstraints(),
-                                      onPressed: () async {
-                                        final confirm = await showDialog<bool>(
-                                          context: context,
-                                          builder: (ctx) => AlertDialog(
-                                            title: const Text('Delete Transaction', style: TextStyle(fontWeight: FontWeight.w800)),
-                                            content: Text('Are you sure you want to delete "${tx.description}"?'),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () => Navigator.pop(ctx, false),
-                                                child: const Text('Cancel'),
-                                              ),
-                                              ElevatedButton(
-                                                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFBE123C)),
-                                                onPressed: () => Navigator.pop(ctx, true),
-                                                child: const Text('Delete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-
-                                        if (confirm == true) {
-                                          await txProvider.deleteTransaction(tx.id);
-                                        }
-                                      },
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              ),
                             );
                           },
                         ),

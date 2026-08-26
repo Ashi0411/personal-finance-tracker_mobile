@@ -2,21 +2,19 @@ import 'package:intl/intl.dart';
 
 class Formatters {
   static String currency(double amount, {String symbol = '\$'}) {
-    final formatter = NumberFormat.currency(
-      symbol: symbol,
-      decimalDigits: 2,
-      customPattern: '$symbol #,##0.00',
-    );
-    return formatter.format(amount);
+    final cleanSymbol = symbol.trim();
+    final formatter = NumberFormat('#,##0.00', 'en_US');
+    return '$cleanSymbol ${formatter.format(amount)}';
   }
 
   static String compactCurrency(double amount, {String symbol = '\$'}) {
+    final cleanSymbol = symbol.trim();
     if (amount.abs() >= 1000000) {
-      return '$symbol${(amount / 1000000).toStringAsFixed(1)}M';
+      return '$cleanSymbol ${(amount / 1000000).toStringAsFixed(1)}M';
     } else if (amount.abs() >= 1000) {
-      return '$symbol${(amount / 1000).toStringAsFixed(1)}k';
+      return '$cleanSymbol ${(amount / 1000).toStringAsFixed(1)}k';
     }
-    return '$symbol${amount.toStringAsFixed(0)}';
+    return '$cleanSymbol ${amount.toStringAsFixed(0)}';
   }
 
   static String date(DateTime date) {

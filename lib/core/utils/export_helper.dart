@@ -43,6 +43,13 @@ class ExportHelper {
     final nowFormatted = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
     final periodLabel = getStatementTitle(report);
 
+    pw.ImageProvider? logoImage;
+    try {
+      logoImage = await imageFromAssetBundle('assets/images/logo.png');
+    } catch (e) {
+      debugPrint('Error loading logo for PDF: $e');
+    }
+
     // Filter transactions to strictly match the selected month or year
     final filteredTransactions = transactions.where((tx) {
       if (isMonthly) {
@@ -102,21 +109,34 @@ class ExportHelper {
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  pw.Row(
+                    crossAxisAlignment: pw.CrossAxisAlignment.center,
                     children: [
-                      pw.Text(
-                        'FinanceTracker',
-                        style: pw.TextStyle(
-                          fontSize: 22,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColor.fromHex('#1E1B4B'),
+                      if (logoImage != null) ...[
+                        pw.Container(
+                          width: 36,
+                          height: 36,
+                          child: pw.Image(logoImage, fit: pw.BoxFit.contain),
                         ),
-                      ),
-                      pw.SizedBox(height: 3),
-                      pw.Text(
-                        'Personal Wealth & Cash Flow Management',
-                        style: pw.TextStyle(fontSize: 10, color: PdfColor.fromHex('#64748B')),
+                        pw.SizedBox(width: 10),
+                      ],
+                      pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text(
+                            'FinanceTracker',
+                            style: pw.TextStyle(
+                              fontSize: 20,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColor.fromHex('#0F172A'),
+                            ),
+                          ),
+                          pw.SizedBox(height: 2),
+                          pw.Text(
+                            'Personal Wealth & Cash Flow Management',
+                            style: pw.TextStyle(fontSize: 9, color: PdfColor.fromHex('#64748B')),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -395,21 +415,34 @@ class ExportHelper {
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  pw.Row(
+                    crossAxisAlignment: pw.CrossAxisAlignment.center,
                     children: [
-                      pw.Text(
-                        'FinanceTracker',
-                        style: pw.TextStyle(
-                          fontSize: 22,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColor.fromHex('#1E1B4B'),
+                      if (logoImage != null) ...[
+                        pw.Container(
+                          width: 36,
+                          height: 36,
+                          child: pw.Image(logoImage, fit: pw.BoxFit.contain),
                         ),
-                      ),
-                      pw.SizedBox(height: 3),
-                      pw.Text(
-                        'Personal Wealth & Cash Flow Management',
-                        style: pw.TextStyle(fontSize: 10, color: PdfColor.fromHex('#64748B')),
+                        pw.SizedBox(width: 10),
+                      ],
+                      pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text(
+                            'FinanceTracker',
+                            style: pw.TextStyle(
+                              fontSize: 20,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColor.fromHex('#0F172A'),
+                            ),
+                          ),
+                          pw.SizedBox(height: 2),
+                          pw.Text(
+                            'Personal Wealth & Cash Flow Management',
+                            style: pw.TextStyle(fontSize: 9, color: PdfColor.fromHex('#64748B')),
+                          ),
+                        ],
                       ),
                     ],
                   ),
