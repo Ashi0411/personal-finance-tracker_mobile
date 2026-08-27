@@ -410,21 +410,6 @@ class AuthProvider extends ChangeNotifier {
     await prefs.setString('user_goals_$trimmedEmail', jsonEncode([]));
     await prefs.setString('user_budgets_$trimmedEmail', jsonEncode([]));
 
-    // Log in as new user
-    await _apiClient.setDemoMode(true);
-    _currentUser = UserModel(
-      id: newId,
-      fullName: trimmedName,
-      email: trimmedEmail,
-      avatarUrl: null, // Zero photo by default -> shows colorful initial letter!
-      currency: '\$',
-      createdAt: DateTime.now(),
-    );
-
-    _isLoggedIn = true;
-    await prefs.setString('cached_user', jsonEncode(_currentUser!.toJson()));
-    await prefs.setBool('is_logged_in', true);
-    await _saveAccountToDevice(_currentUser!);
     _setLoading(false);
     return true;
   }

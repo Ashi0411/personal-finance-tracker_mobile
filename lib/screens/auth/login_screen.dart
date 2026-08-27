@@ -365,11 +365,17 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 GestureDetector(
-                  onTap: () {
-                    Navigator.push(
+                  onTap: () async {
+                    final registeredEmail = await Navigator.push<String>(
                       context,
                       MaterialPageRoute(builder: (_) => const RegisterScreen()),
                     );
+                    if (registeredEmail != null && registeredEmail.isNotEmpty) {
+                      setState(() {
+                        _emailController.text = registeredEmail;
+                        _passwordController.clear();
+                      });
+                    }
                   },
                   child: const Text(
                     'Create Account',
