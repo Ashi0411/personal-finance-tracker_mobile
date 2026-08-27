@@ -358,14 +358,50 @@ class _AccountItemTile extends StatelessWidget {
             ),
           ),
 
-          // Trailing: Radio/Check or Delete Option
+          // Trailing: Radio/Check or Switch + Remove Options
           if (isActive)
-            const Icon(Icons.radio_button_checked_rounded, color: Color(0xFF10B981), size: 22)
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: const BoxDecoration(
+                color: Color(0xFF10B981),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.check_rounded, color: Colors.white, size: 16),
+            )
           else
-            IconButton(
-              icon: const Icon(Icons.more_vert_rounded, size: 18, color: Color(0xFF94A3B8)),
-              tooltip: context.tr('remove_account'),
-              onPressed: onRemove,
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF6366F1).withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.3)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.swap_horiz_rounded, size: 14, color: Color(0xFF6366F1)),
+                      SizedBox(width: 4),
+                      Text(
+                        'Switch',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF6366F1),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 4),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded, size: 18, color: Color(0xFF94A3B8)),
+                  tooltip: context.tr('remove_account'),
+                  onPressed: onRemove,
+                ),
+              ],
             ),
         ],
       ),

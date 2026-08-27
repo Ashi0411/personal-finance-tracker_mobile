@@ -116,6 +116,7 @@ class _AddEditBudgetDialogState extends State<AddEditBudgetDialog> {
                 const SizedBox(height: 8),
                 DropdownButtonFormField<int>(
                   initialValue: _selectedCategoryId,
+                  isExpanded: true,
                   dropdownColor: isDark ? const Color(0xFF0F172A) : Colors.white,
                   borderRadius: BorderRadius.circular(20),
                   elevation: 12,
@@ -167,9 +168,13 @@ class _AddEditBudgetDialogState extends State<AddEditBudgetDialog> {
                             ),
                           ),
                           const SizedBox(width: 10),
-                          Text(
-                            cat.name,
-                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                          Expanded(
+                            child: Text(
+                              cat.name,
+                              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         ],
                       );
@@ -182,10 +187,10 @@ class _AddEditBudgetDialogState extends State<AddEditBudgetDialog> {
                       child: Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(7),
+                            padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
                               color: catColor.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(8),
                             ),
                             child: Icon(
                               CategoryIconHelper.getIcon(cat.icon),
@@ -193,10 +198,14 @@ class _AddEditBudgetDialogState extends State<AddEditBudgetDialog> {
                               size: 16,
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          Text(
-                            cat.name,
-                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              cat.name,
+                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         ],
                       ),
