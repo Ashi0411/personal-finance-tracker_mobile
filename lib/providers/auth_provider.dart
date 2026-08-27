@@ -22,6 +22,8 @@ class AuthProvider extends ChangeNotifier {
 
   static const String _usersRegistryKey = 'registered_users_registry_v1';
 
+  String _getUserAvatarKey(String email) => 'user_avatar_${email.toLowerCase().trim()}';
+
   Future<void> checkAuthStatus() async {
     _setLoading(true);
     await _loadSavedAccounts();
@@ -29,7 +31,6 @@ class AuthProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     final loggedInFlag = prefs.getBool('is_logged_in') ?? false;
     final savedUserJson = prefs.getString('cached_user');
-    final savedAvatar = prefs.getString('user_custom_avatar_base64');
 
     if (!loggedInFlag || savedUserJson == null) {
       _currentUser = null;
@@ -41,8 +42,11 @@ class AuthProvider extends ChangeNotifier {
     try {
       if (_apiClient.isDemoMode) {
         _currentUser = UserModel.fromJson(jsonDecode(savedUserJson));
-        if (savedAvatar != null) {
-          _currentUser = _currentUser!.copyWith(avatarUrl: savedAvatar);
+        final userAvatar = prefs.getString(_getUserAvatarKey(_currentUser!.email));
+        if (userAvatar != null && userAvatar.isNotEmpty) {
+          _currentUser = _currentUser!.copyWith(avatarUrl: userAvatar);
+        } else {
+          _currentUser = _currentUser!.copyWith(avatarUrl: null);
         }
         _isLoggedIn = true;
       } else {
@@ -52,23 +56,26 @@ class AuthProvider extends ChangeNotifier {
               ? (response.data['user'] ?? response.data)
               : response.data;
           _currentUser = UserModel.fromJson(userData);
-          if (savedAvatar != null) {
-            _currentUser = _currentUser!.copyWith(avatarUrl: savedAvatar);
+          final userAvatar = prefs.getString(_getUserAvatarKey(_currentUser!.email));
+          if (userAvatar != null && userAvatar.isNotEmpty) {
+            _currentUser = _currentUser!.copyWith(avatarUrl: userAvatar);
           }
           _isLoggedIn = true;
           await prefs.setString('cached_user', jsonEncode(_currentUser!.toJson()));
         } else {
           _currentUser = UserModel.fromJson(jsonDecode(savedUserJson));
-          if (savedAvatar != null) {
-            _currentUser = _currentUser!.copyWith(avatarUrl: savedAvatar);
+          final userAvatar = prefs.getString(_getUserAvatarKey(_currentUser!.email));
+          if (userAvatar != null && userAvatar.isNotEmpty) {
+            _currentUser = _currentUser!.copyWith(avatarUrl: userAvatar);
           }
           _isLoggedIn = true;
         }
       }
     } catch (_) {
       _currentUser = UserModel.fromJson(jsonDecode(savedUserJson));
-      if (savedAvatar != null) {
-        _currentUser = _currentUser!.copyWith(avatarUrl: savedAvatar);
+      final userAvatar = prefs.getString(_getUserAvatarKey(_currentUser!.email));
+      if (userAvatar != null && userAvatar.isNotEmpty) {
+        _currentUser = _currentUser!.copyWith(avatarUrl: userAvatar);
       }
       _isLoggedIn = true;
     }
@@ -171,16 +178,19 @@ class AuthProvider extends ChangeNotifier {
       orElse: () => _savedAccounts.first,
     );
 
+    final prefs = await SharedPreferences.getInstance();
+    final userAvatar = prefs.getString(_getUserAvatarKey(account.email));
+
     if (account.userJson != null) {
       try {
         final userMap = jsonDecode(account.userJson!);
-        _currentUser = UserModel.fromJson(userMap);
+        _currentUser = UserModel.fromJson(userMap).copyWith(avatarUrl: userAvatar);
       } catch (_) {
         _currentUser = UserModel(
           id: account.id,
           fullName: account.fullName,
           email: account.email,
-          avatarUrl: account.avatarUrl,
+          avatarUrl: userAvatar,
           currency: account.currency,
           createdAt: DateTime.now(),
         );
@@ -190,19 +200,15 @@ class AuthProvider extends ChangeNotifier {
         id: account.id,
         fullName: account.fullName,
         email: account.email,
-        avatarUrl: account.avatarUrl,
+        avatarUrl: userAvatar,
         currency: account.currency,
         createdAt: DateTime.now(),
       );
     }
 
     _isLoggedIn = true;
-    final prefs = await SharedPreferences.getInstance();
     await prefs.setString('cached_user', jsonEncode(_currentUser!.toJson()));
     await prefs.setBool('is_logged_in', true);
-    if (account.avatarUrl != null) {
-      await prefs.setString('user_custom_avatar_base64', account.avatarUrl!);
-    }
 
     await _saveAccountToDevice(_currentUser!);
     _setLoading(false);
@@ -211,12 +217,14 @@ class AuthProvider extends ChangeNotifier {
 
   Future<bool> removeSavedAccount(String email) async {
     final prefs = await SharedPreferences.getInstance();
-    _savedAccounts.removeWhere((a) => a.email.toLowerCase() == email.toLowerCase());
+    final normalized = email.toLowerCase().trim();
+    _savedAccounts.removeWhere((a) => a.email.toLowerCase() == normalized);
     final accountsJson = jsonEncode(_savedAccounts.map((a) => a.toJson()).toList());
     await prefs.setString('saved_accounts_list', accountsJson);
+    await prefs.remove(_getUserAvatarKey(normalized));
 
     // If removing currently logged in user
-    if (_currentUser != null && _currentUser!.email.toLowerCase() == email.toLowerCase()) {
+    if (_currentUser != null && _currentUser!.email.toLowerCase() == normalized) {
       if (_savedAccounts.isNotEmpty) {
         await switchAccount(_savedAccounts.first.email);
       } else {
@@ -248,7 +256,7 @@ class AuthProvider extends ChangeNotifier {
     }
 
     final prefs = await SharedPreferences.getInstance();
-    final savedAvatar = prefs.getString('user_custom_avatar_base64');
+    final userAvatar = prefs.getString(_getUserAvatarKey(trimmedEmail));
 
     // 1. If Online Backend is Available, attempt API login
     if (!_apiClient.isDemoMode && !forceDemo) {
@@ -263,8 +271,8 @@ class AuthProvider extends ChangeNotifier {
               ? (response.data['user'] ?? response.data)
               : {'id': 1, 'full_name': trimmedEmail.split('@').first, 'email': trimmedEmail};
           _currentUser = UserModel.fromJson(userData);
-          if (savedAvatar != null) {
-            _currentUser = _currentUser!.copyWith(avatarUrl: savedAvatar);
+          if (userAvatar != null) {
+            _currentUser = _currentUser!.copyWith(avatarUrl: userAvatar);
           }
           _isLoggedIn = true;
           await prefs.setString('cached_user', jsonEncode(_currentUser!.toJson()));
@@ -285,7 +293,7 @@ class AuthProvider extends ChangeNotifier {
         id: 1,
         fullName: 'Demo User',
         email: 'demo@financetracker.com',
-        avatarUrl: savedAvatar,
+        avatarUrl: userAvatar,
         currency: '\$',
         createdAt: DateTime.now(),
       );
@@ -318,7 +326,7 @@ class AuthProvider extends ChangeNotifier {
       id: userRecord['id'] is int ? userRecord['id'] : (int.tryParse(userRecord['id'].toString()) ?? 100),
       fullName: userRecord['fullName']?.toString() ?? trimmedEmail.split('@').first,
       email: trimmedEmail,
-      avatarUrl: savedAvatar,
+      avatarUrl: userAvatar,
       currency: '\$',
       createdAt: DateTime.tryParse(userRecord['createdAt']?.toString() ?? '') ?? DateTime.now(),
     );
@@ -396,7 +404,8 @@ class AuthProvider extends ChangeNotifier {
 
     await _saveRegisteredUsers(usersMap);
 
-    // CRITICAL: Initialize fresh, empty user records for new user
+    // CRITICAL: New user starts with NO custom avatar (pure initial letters), 0 transactions, 0 goals, 0 budgets!
+    await prefs.remove(_getUserAvatarKey(trimmedEmail));
     await prefs.setString('user_transactions_$trimmedEmail', jsonEncode([]));
     await prefs.setString('user_goals_$trimmedEmail', jsonEncode([]));
     await prefs.setString('user_budgets_$trimmedEmail', jsonEncode([]));
@@ -407,6 +416,7 @@ class AuthProvider extends ChangeNotifier {
       id: newId,
       fullName: trimmedName,
       email: trimmedEmail,
+      avatarUrl: null, // Zero photo by default -> shows colorful initial letter!
       currency: '\$',
       createdAt: DateTime.now(),
     );
@@ -436,18 +446,19 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<bool> updateAvatar(String? avatarData) async {
+    if (_currentUser == null) return false;
     final prefs = await SharedPreferences.getInstance();
-    if (avatarData != null) {
-      await prefs.setString('user_custom_avatar_base64', avatarData);
+    final userKey = _getUserAvatarKey(_currentUser!.email);
+
+    if (avatarData != null && avatarData.isNotEmpty) {
+      await prefs.setString(userKey, avatarData);
     } else {
-      await prefs.remove('user_custom_avatar_base64');
+      await prefs.remove(userKey);
     }
 
-    if (_currentUser != null) {
-      _currentUser = _currentUser!.copyWith(avatarUrl: avatarData);
-      await prefs.setString('cached_user', jsonEncode(_currentUser!.toJson()));
-      await _saveAccountToDevice(_currentUser!);
-    }
+    _currentUser = _currentUser!.copyWith(avatarUrl: avatarData);
+    await prefs.setString('cached_user', jsonEncode(_currentUser!.toJson()));
+    await _saveAccountToDevice(_currentUser!);
     notifyListeners();
     return true;
   }
@@ -462,14 +473,14 @@ class AuthProvider extends ChangeNotifier {
     }
 
     final prefs = await SharedPreferences.getInstance();
-    final savedAvatar = prefs.getString('user_custom_avatar_base64');
+    final userAvatar = prefs.getString(_getUserAvatarKey(_currentUser!.email));
 
     if (_apiClient.isDemoMode) {
       await Future.delayed(const Duration(milliseconds: 200));
       _currentUser = _currentUser!.copyWith(
         fullName: fullName ?? _currentUser!.fullName,
         email: email ?? _currentUser!.email,
-        avatarUrl: savedAvatar ?? _currentUser!.avatarUrl,
+        avatarUrl: userAvatar,
       );
 
       final usersMap = await _loadRegisteredUsers();
@@ -501,8 +512,8 @@ class AuthProvider extends ChangeNotifier {
             ? (response.data['user'] ?? response.data)
             : response.data;
         _currentUser = UserModel.fromJson(userData);
-        if (savedAvatar != null) {
-          _currentUser = _currentUser!.copyWith(avatarUrl: savedAvatar);
+        if (userAvatar != null) {
+          _currentUser = _currentUser!.copyWith(avatarUrl: userAvatar);
         }
         await prefs.setString('cached_user', jsonEncode(_currentUser!.toJson()));
         await _saveAccountToDevice(_currentUser!);
