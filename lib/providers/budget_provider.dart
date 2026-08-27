@@ -51,45 +51,81 @@ class BudgetProvider extends ChangeNotifier {
     return spent;
   }
 
+  Future<String> _getUserStorageKey(String baseKey) async {
+    final prefs = await SharedPreferences.getInstance();
+    final cachedUser = prefs.getString('cached_user');
+    if (cachedUser != null) {
+      try {
+        final Map<String, dynamic> userMap = jsonDecode(cachedUser);
+        final email = userMap['email']?.toString().toLowerCase().trim();
+        if (email != null && email.isNotEmpty) {
+          return '${baseKey}_$email';
+        }
+      } catch (_) {}
+    }
+    return baseKey;
+  }
+
   Future<void> fetchBudgets({List<TransactionModel>? fallbackTransactions}) async {
     _setLoading(true);
     _errorMessage = null;
 
     final prefs = await SharedPreferences.getInstance();
-    final savedBudgetsJson = prefs.getString('user_budgets');
+    final storageKey = await _getUserStorageKey('user_budgets');
+    final savedBudgetsJson = prefs.getString(storageKey);
+
+    final cachedUser = prefs.getString('cached_user');
+    bool isDemoAccount = false;
+    if (cachedUser != null) {
+      try {
+        final Map<String, dynamic> userMap = jsonDecode(cachedUser);
+        final email = userMap['email']?.toString().toLowerCase().trim();
+        if (email == 'demo@financetracker.com' || email == 'admin@financetracker.com') {
+          isDemoAccount = true;
+        }
+      } catch (_) {}
+    }
 
     List<BudgetModel> loadedBudgets = [];
 
     if (_apiClient.isDemoMode) {
       if (savedBudgetsJson != null) {
-        final List list = jsonDecode(savedBudgetsJson);
-        loadedBudgets = list.map((item) => BudgetModel.fromJson(item)).toList();
+        try {
+          final List list = jsonDecode(savedBudgetsJson);
+          loadedBudgets = list.map((item) => BudgetModel.fromJson(item)).toList();
+        } catch (_) {
+          loadedBudgets = [];
+        }
       } else {
-        // Default initial budgets specifically tagged for 2026-08 (August 2026)
-        loadedBudgets = [
-          BudgetModel(
-            id: 1,
-            userId: 1,
-            categoryId: 1,
-            categoryName: 'Food',
-            categoryIcon: 'restaurant',
-            categoryColor: '#3B82F6',
-            allocatedAmount: 15000.0,
-            spentAmount: 5000.0,
-            monthYear: '2026-08',
-          ),
-          BudgetModel(
-            id: 2,
-            userId: 1,
-            categoryId: 2,
-            categoryName: 'Transport',
-            categoryIcon: 'directions_car',
-            categoryColor: '#06B6D4',
-            allocatedAmount: 10000.0,
-            spentAmount: 6000.0,
-            monthYear: '2026-08',
-          ),
-        ];
+        if (isDemoAccount) {
+          loadedBudgets = [
+            BudgetModel(
+              id: 1,
+              userId: 1,
+              categoryId: 1,
+              categoryName: 'Food',
+              categoryIcon: 'restaurant',
+              categoryColor: '#3B82F6',
+              allocatedAmount: 15000.0,
+              spentAmount: 5000.0,
+              monthYear: '2026-08',
+            ),
+            BudgetModel(
+              id: 2,
+              userId: 1,
+              categoryId: 2,
+              categoryName: 'Transport',
+              categoryIcon: 'directions_car',
+              categoryColor: '#06B6D4',
+              allocatedAmount: 10000.0,
+              spentAmount: 6000.0,
+              monthYear: '2026-08',
+            ),
+          ];
+        } else {
+          // Fresh registered user starts with 0 budgets
+          loadedBudgets = [];
+        }
       }
     } else {
       try {
@@ -109,7 +145,7 @@ class BudgetProvider extends ChangeNotifier {
       }
     }
 
-    // Ensure all budgets have a valid monthYear (default to 2026-08 if empty)
+    // Ensure all budgets have a valid monthYear
     _budgets = loadedBudgets.map((b) {
       final mYear = b.monthYear.isEmpty ? '2026-08' : b.monthYear;
       final actualSpent = _calculateSpentForCategory(b, fallbackTransactions, mYear);
@@ -191,8 +227,9 @@ class BudgetProvider extends ChangeNotifier {
 
   Future<void> _saveToStorage() async {
     final prefs = await SharedPreferences.getInstance();
+    final storageKey = await _getUserStorageKey('user_budgets');
     final jsonList = _budgets.map((b) => b.toJson()).toList();
-    await prefs.setString('user_budgets', jsonEncode(jsonList));
+    await prefs.setString(storageKey, jsonEncode(jsonList));
   }
 
   void _setLoading(bool value) {

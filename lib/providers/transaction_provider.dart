@@ -71,9 +71,25 @@ class TransactionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<String> _getUserStorageKey(String baseKey) async {
+    final prefs = await SharedPreferences.getInstance();
+    final cachedUser = prefs.getString('cached_user');
+    if (cachedUser != null) {
+      try {
+        final Map<String, dynamic> userMap = jsonDecode(cachedUser);
+        final email = userMap['email']?.toString().toLowerCase().trim();
+        if (email != null && email.isNotEmpty) {
+          return '${baseKey}_$email';
+        }
+      } catch (_) {}
+    }
+    return baseKey;
+  }
+
   Future<void> fetchCategories() async {
     final prefs = await SharedPreferences.getInstance();
-    final savedCats = prefs.getString('user_categories');
+    final storageKey = await _getUserStorageKey('user_categories');
+    final savedCats = prefs.getString(storageKey);
 
     if (savedCats != null) {
       try {
@@ -195,8 +211,9 @@ class TransactionProvider extends ChangeNotifier {
 
   Future<void> _saveCategoriesToStorage() async {
     final prefs = await SharedPreferences.getInstance();
+    final storageKey = await _getUserStorageKey('user_categories');
     final jsonList = _categories.map((c) => c.toJson()).toList();
-    await prefs.setString('user_categories', jsonEncode(jsonList));
+    await prefs.setString(storageKey, jsonEncode(jsonList));
   }
 
   Future<void> fetchTransactions() async {
@@ -208,25 +225,38 @@ class TransactionProvider extends ChangeNotifier {
     }
 
     final prefs = await SharedPreferences.getInstance();
-    final savedTxJson = prefs.getString('user_transactions');
+    final storageKey = await _getUserStorageKey('user_transactions');
+    final savedTxJson = prefs.getString(storageKey);
+
+    final cachedUser = prefs.getString('cached_user');
+    bool isDemoAccount = false;
+    if (cachedUser != null) {
+      try {
+        final Map<String, dynamic> userMap = jsonDecode(cachedUser);
+        final email = userMap['email']?.toString().toLowerCase().trim();
+        if (email == 'demo@financetracker.com' || email == 'admin@financetracker.com') {
+          isDemoAccount = true;
+        }
+      } catch (_) {}
+    }
 
     if (_apiClient.isDemoMode) {
       if (savedTxJson != null) {
         try {
           final List list = jsonDecode(savedTxJson);
-          if (list.isNotEmpty) {
-            _transactions = list.map((item) => TransactionModel.fromJson(item)).toList();
-          } else {
-            _loadDefaultSeedTransactions();
-            await _saveToStorage();
-          }
+          _transactions = list.map((item) => TransactionModel.fromJson(item)).toList();
         } catch (_) {
-          _loadDefaultSeedTransactions();
-          await _saveToStorage();
+          _transactions = [];
         }
       } else {
-        _loadDefaultSeedTransactions();
-        await _saveToStorage();
+        if (isDemoAccount) {
+          _loadDefaultSeedTransactions();
+          await _saveToStorage();
+        } else {
+          // Fresh new registered user starts with 0 transactions
+          _transactions = [];
+          await _saveToStorage();
+        }
       }
       _setLoading(false);
       return;
@@ -241,41 +271,26 @@ class TransactionProvider extends ChangeNotifier {
           await _saveToStorage();
         } else if (savedTxJson != null) {
           final List savedList = jsonDecode(savedTxJson);
-          if (savedList.isNotEmpty) {
-            _transactions = savedList.map((item) => TransactionModel.fromJson(item)).toList();
-          } else {
-            _loadDefaultSeedTransactions();
-            await _saveToStorage();
-          }
+          _transactions = savedList.map((item) => TransactionModel.fromJson(item)).toList();
         } else {
-          _loadDefaultSeedTransactions();
+          _transactions = [];
           await _saveToStorage();
         }
       } else {
         if (savedTxJson != null) {
           final List list = jsonDecode(savedTxJson);
-          if (list.isNotEmpty) {
-            _transactions = list.map((item) => TransactionModel.fromJson(item)).toList();
-          } else {
-            _loadDefaultSeedTransactions();
-            await _saveToStorage();
-          }
+          _transactions = list.map((item) => TransactionModel.fromJson(item)).toList();
         } else {
-          _loadDefaultSeedTransactions();
+          _transactions = [];
           await _saveToStorage();
         }
       }
     } catch (_) {
       if (savedTxJson != null) {
         final List list = jsonDecode(savedTxJson);
-        if (list.isNotEmpty) {
-          _transactions = list.map((item) => TransactionModel.fromJson(item)).toList();
-        } else {
-          _loadDefaultSeedTransactions();
-          await _saveToStorage();
-        }
+        _transactions = list.map((item) => TransactionModel.fromJson(item)).toList();
       } else {
-        _loadDefaultSeedTransactions();
+        _transactions = [];
         await _saveToStorage();
       }
     }
@@ -390,8 +405,9 @@ class TransactionProvider extends ChangeNotifier {
 
   Future<void> _saveToStorage() async {
     final prefs = await SharedPreferences.getInstance();
+    final storageKey = await _getUserStorageKey('user_transactions');
     final jsonList = _transactions.map((tx) => tx.toJson()).toList();
-    await prefs.setString('user_transactions', jsonEncode(jsonList));
+    await prefs.setString(storageKey, jsonEncode(jsonList));
   }
 
   void _loadDefaultSeedTransactions() {

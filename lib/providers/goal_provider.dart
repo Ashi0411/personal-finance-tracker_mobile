@@ -28,25 +28,58 @@ class GoalProvider extends ChangeNotifier {
     return (totalSavedAmount / totalTargetAmount) * 100;
   }
 
+  Future<String> _getUserStorageKey(String baseKey) async {
+    final prefs = await SharedPreferences.getInstance();
+    final cachedUser = prefs.getString('cached_user');
+    if (cachedUser != null) {
+      try {
+        final Map<String, dynamic> userMap = jsonDecode(cachedUser);
+        final email = userMap['email']?.toString().toLowerCase().trim();
+        if (email != null && email.isNotEmpty) {
+          return '${baseKey}_$email';
+        }
+      } catch (_) {}
+    }
+    return baseKey;
+  }
+
   Future<void> fetchGoals() async {
     _setLoading(true);
     _errorMessage = null;
 
     final prefs = await SharedPreferences.getInstance();
-    final savedGoalsJson = prefs.getString('user_goals');
+    final storageKey = await _getUserStorageKey('user_goals');
+    final savedGoalsJson = prefs.getString(storageKey);
+
+    final cachedUser = prefs.getString('cached_user');
+    bool isDemoAccount = false;
+    if (cachedUser != null) {
+      try {
+        final Map<String, dynamic> userMap = jsonDecode(cachedUser);
+        final email = userMap['email']?.toString().toLowerCase().trim();
+        if (email == 'demo@financetracker.com' || email == 'admin@financetracker.com') {
+          isDemoAccount = true;
+        }
+      } catch (_) {}
+    }
 
     if (_apiClient.isDemoMode) {
       if (savedGoalsJson != null) {
-        final List list = jsonDecode(savedGoalsJson);
-        if (list.isNotEmpty) {
+        try {
+          final List list = jsonDecode(savedGoalsJson);
           _goals = list.map((item) => GoalModel.fromJson(item)).toList();
-        } else {
-          _loadDefaultSeedGoals();
-          await _saveToStorage();
+        } catch (_) {
+          _goals = [];
         }
       } else {
-        _loadDefaultSeedGoals();
-        await _saveToStorage();
+        if (isDemoAccount) {
+          _loadDefaultSeedGoals();
+          await _saveToStorage();
+        } else {
+          // Fresh registered user starts with 0 goals
+          _goals = [];
+          await _saveToStorage();
+        }
       }
       _setLoading(false);
       return;
@@ -58,42 +91,29 @@ class GoalProvider extends ChangeNotifier {
         final List list = response.data is List ? response.data : (response.data['goals'] ?? []);
         if (list.isNotEmpty) {
           _goals = list.map((item) => GoalModel.fromJson(item)).toList();
+          await _saveToStorage();
         } else if (savedGoalsJson != null) {
           final List savedList = jsonDecode(savedGoalsJson);
-          if (savedList.isNotEmpty) {
-            _goals = savedList.map((item) => GoalModel.fromJson(item)).toList();
-          } else {
-            _loadDefaultSeedGoals();
-          }
+          _goals = savedList.map((item) => GoalModel.fromJson(item)).toList();
         } else {
-          _loadDefaultSeedGoals();
+          _goals = [];
+          await _saveToStorage();
         }
-        await _saveToStorage();
       } else {
         if (savedGoalsJson != null) {
           final List list = jsonDecode(savedGoalsJson);
-          if (list.isNotEmpty) {
-            _goals = list.map((item) => GoalModel.fromJson(item)).toList();
-          } else {
-            _loadDefaultSeedGoals();
-            await _saveToStorage();
-          }
+          _goals = list.map((item) => GoalModel.fromJson(item)).toList();
         } else {
-          _loadDefaultSeedGoals();
+          _goals = [];
           await _saveToStorage();
         }
       }
     } catch (_) {
       if (savedGoalsJson != null) {
         final List list = jsonDecode(savedGoalsJson);
-        if (list.isNotEmpty) {
-          _goals = list.map((item) => GoalModel.fromJson(item)).toList();
-        } else {
-          _loadDefaultSeedGoals();
-          await _saveToStorage();
-        }
+        _goals = list.map((item) => GoalModel.fromJson(item)).toList();
       } else {
-        _loadDefaultSeedGoals();
+        _goals = [];
         await _saveToStorage();
       }
     }
@@ -265,8 +285,9 @@ class GoalProvider extends ChangeNotifier {
 
   Future<void> _saveToStorage() async {
     final prefs = await SharedPreferences.getInstance();
+    final storageKey = await _getUserStorageKey('user_goals');
     final jsonList = _goals.map((g) => g.toJson()).toList();
-    await prefs.setString('user_goals', jsonEncode(jsonList));
+    await prefs.setString(storageKey, jsonEncode(jsonList));
   }
 
   void _setLoading(bool value) {

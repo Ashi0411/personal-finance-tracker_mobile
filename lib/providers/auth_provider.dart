@@ -20,6 +20,8 @@ class AuthProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   List<SavedAccountModel> get savedAccounts => _savedAccounts;
 
+  static const String _usersRegistryKey = 'registered_users_registry_v1';
+
   Future<void> checkAuthStatus() async {
     _setLoading(true);
     await _loadSavedAccounts();
@@ -78,6 +80,44 @@ class AuthProvider extends ChangeNotifier {
     _setLoading(false);
   }
 
+  Future<Map<String, Map<String, dynamic>>> _loadRegisteredUsers() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonStr = prefs.getString(_usersRegistryKey);
+    Map<String, Map<String, dynamic>> users = {};
+
+    if (jsonStr != null && jsonStr.isNotEmpty) {
+      try {
+        final Map<String, dynamic> decoded = jsonDecode(jsonStr);
+        decoded.forEach((key, value) {
+          if (value is Map<String, dynamic>) {
+            users[key.toLowerCase()] = value;
+          }
+        });
+      } catch (_) {}
+    }
+
+    // Ensure built-in demo account exists
+    if (!users.containsKey('demo@financetracker.com')) {
+      users['demo@financetracker.com'] = {
+        'id': 1,
+        'fullName': 'Demo User',
+        'email': 'demo@financetracker.com',
+        'password': 'demo123',
+        'isDemo': true,
+        'createdAt': DateTime.now().toIso8601String(),
+      };
+    }
+
+    return users;
+  }
+
+  Future<void> _saveRegisteredUsers(Map<String, Map<String, dynamic>> users) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_usersKey, jsonEncode(users));
+  }
+
+  static const String _usersKey = _usersRegistryKey;
+
   Future<void> _loadSavedAccounts() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -97,7 +137,7 @@ class AuthProvider extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       final index = _savedAccounts.indexWhere((a) => a.email.toLowerCase() == user.email.toLowerCase());
-      
+
       final updatedAccount = SavedAccountModel(
         id: user.id,
         fullName: user.fullName,
@@ -192,73 +232,59 @@ class AuthProvider extends ChangeNotifier {
     _setLoading(true);
     _errorMessage = null;
 
-    final trimmedEmail = email.trim();
-    final defaultName = trimmedEmail.contains('@') ? trimmedEmail.split('@').first : 'User';
+    final trimmedEmail = email.trim().toLowerCase();
+    final trimmedPass = password.trim();
+
+    if (trimmedEmail.isEmpty) {
+      _errorMessage = 'Please enter your email address.';
+      _setLoading(false);
+      return false;
+    }
+
+    if (trimmedPass.isEmpty && !forceDemo) {
+      _errorMessage = 'Please enter your password.';
+      _setLoading(false);
+      return false;
+    }
+
     final prefs = await SharedPreferences.getInstance();
     final savedAvatar = prefs.getString('user_custom_avatar_base64');
 
-    if (forceDemo || _apiClient.isDemoMode) {
-      await _apiClient.setDemoMode(true);
-      await Future.delayed(const Duration(milliseconds: 200));
-      _currentUser = UserModel(
-        id: 1,
-        fullName: defaultName,
-        email: trimmedEmail.isNotEmpty ? trimmedEmail : 'user@financetracker.com',
-        avatarUrl: savedAvatar,
-        currency: '\$',
-        createdAt: DateTime.now(),
-      );
-      _isLoggedIn = true;
-      await prefs.setString('cached_user', jsonEncode(_currentUser!.toJson()));
-      await prefs.setBool('is_logged_in', true);
-      await _saveAccountToDevice(_currentUser!);
-      _setLoading(false);
-      return true;
-    }
+    // 1. If Online Backend is Available, attempt API login
+    if (!_apiClient.isDemoMode && !forceDemo) {
+      try {
+        final response = await _apiClient.post('/login.php', {
+          'email': trimmedEmail,
+          'password': trimmedPass,
+        });
 
-    try {
-      final response = await _apiClient.post('/login.php', {
-        'email': trimmedEmail,
-        'password': password,
-      });
-
-      if (response.success) {
-        final userData = response.data is Map<String, dynamic>
-            ? (response.data['user'] ?? response.data)
-            : {'id': 1, 'full_name': defaultName, 'email': trimmedEmail};
-        _currentUser = UserModel.fromJson(userData);
-        if (savedAvatar != null) {
-          _currentUser = _currentUser!.copyWith(avatarUrl: savedAvatar);
+        if (response.success && response.data != null) {
+          final userData = response.data is Map<String, dynamic>
+              ? (response.data['user'] ?? response.data)
+              : {'id': 1, 'full_name': trimmedEmail.split('@').first, 'email': trimmedEmail};
+          _currentUser = UserModel.fromJson(userData);
+          if (savedAvatar != null) {
+            _currentUser = _currentUser!.copyWith(avatarUrl: savedAvatar);
+          }
+          _isLoggedIn = true;
+          await prefs.setString('cached_user', jsonEncode(_currentUser!.toJson()));
+          await prefs.setBool('is_logged_in', true);
+          await _saveAccountToDevice(_currentUser!);
+          _setLoading(false);
+          return true;
         }
-        _isLoggedIn = true;
-        await prefs.setString('cached_user', jsonEncode(_currentUser!.toJson()));
-        await prefs.setBool('is_logged_in', true);
-        await _saveAccountToDevice(_currentUser!);
-        _setLoading(false);
-        return true;
-      } else {
-        await _apiClient.setDemoMode(true);
-        _currentUser = UserModel(
-          id: 1,
-          fullName: defaultName,
-          email: trimmedEmail,
-          avatarUrl: savedAvatar,
-          currency: '\$',
-          createdAt: DateTime.now(),
-        );
-        _isLoggedIn = true;
-        await prefs.setString('cached_user', jsonEncode(_currentUser!.toJson()));
-        await prefs.setBool('is_logged_in', true);
-        await _saveAccountToDevice(_currentUser!);
-        _setLoading(false);
-        return true;
-      }
-    } catch (_) {
+      } catch (_) {}
+    }
+
+    // 2. Offline / Local User Account Registry Validation
+    final usersMap = await _loadRegisteredUsers();
+
+    if (forceDemo || trimmedEmail == 'demo@financetracker.com') {
       await _apiClient.setDemoMode(true);
       _currentUser = UserModel(
         id: 1,
-        fullName: defaultName,
-        email: trimmedEmail,
+        fullName: 'Demo User',
+        email: 'demo@financetracker.com',
         avatarUrl: savedAvatar,
         currency: '\$',
         createdAt: DateTime.now(),
@@ -270,6 +296,39 @@ class AuthProvider extends ChangeNotifier {
       _setLoading(false);
       return true;
     }
+
+    if (!usersMap.containsKey(trimmedEmail)) {
+      _errorMessage = 'Account not found for "$trimmedEmail". Please create an account first.';
+      _setLoading(false);
+      return false;
+    }
+
+    final userRecord = usersMap[trimmedEmail]!;
+    final storedPassword = userRecord['password']?.toString() ?? '';
+
+    if (storedPassword.isNotEmpty && storedPassword != trimmedPass) {
+      _errorMessage = 'Incorrect password for "$trimmedEmail". Please try again.';
+      _setLoading(false);
+      return false;
+    }
+
+    // Login successful
+    await _apiClient.setDemoMode(true);
+    _currentUser = UserModel(
+      id: userRecord['id'] is int ? userRecord['id'] : (int.tryParse(userRecord['id'].toString()) ?? 100),
+      fullName: userRecord['fullName']?.toString() ?? trimmedEmail.split('@').first,
+      email: trimmedEmail,
+      avatarUrl: savedAvatar,
+      currency: '\$',
+      createdAt: DateTime.tryParse(userRecord['createdAt']?.toString() ?? '') ?? DateTime.now(),
+    );
+
+    _isLoggedIn = true;
+    await prefs.setString('cached_user', jsonEncode(_currentUser!.toJson()));
+    await prefs.setBool('is_logged_in', true);
+    await _saveAccountToDevice(_currentUser!);
+    _setLoading(false);
+    return true;
   }
 
   Future<bool> register(String fullName, String email, String password) async {
@@ -277,53 +336,87 @@ class AuthProvider extends ChangeNotifier {
     _errorMessage = null;
 
     final trimmedName = fullName.trim();
-    final trimmedEmail = email.trim();
-    final prefs = await SharedPreferences.getInstance();
-    final savedAvatar = prefs.getString('user_custom_avatar_base64');
+    final trimmedEmail = email.trim().toLowerCase();
+    final trimmedPass = password.trim();
 
-    try {
-      final response = await _apiClient.post('/register.php', {
-        'full_name': trimmedName,
-        'email': trimmedEmail,
-        'password': password,
-      });
-
-      if (response.success) {
-        return await login(trimmedEmail, password);
-      } else {
-        await _apiClient.setDemoMode(true);
-        _currentUser = UserModel(
-          id: 1,
-          fullName: trimmedName.isNotEmpty ? trimmedName : 'User',
-          email: trimmedEmail,
-          avatarUrl: savedAvatar,
-          currency: '\$',
-          createdAt: DateTime.now(),
-        );
-        _isLoggedIn = true;
-        await prefs.setString('cached_user', jsonEncode(_currentUser!.toJson()));
-        await prefs.setBool('is_logged_in', true);
-        await _saveAccountToDevice(_currentUser!);
-        _setLoading(false);
-        return true;
-      }
-    } catch (_) {
-      await _apiClient.setDemoMode(true);
-      _currentUser = UserModel(
-        id: 1,
-        fullName: trimmedName.isNotEmpty ? trimmedName : 'User',
-        email: trimmedEmail,
-        avatarUrl: savedAvatar,
-        currency: '\$',
-        createdAt: DateTime.now(),
-      );
-      _isLoggedIn = true;
-      await prefs.setString('cached_user', jsonEncode(_currentUser!.toJson()));
-      await prefs.setBool('is_logged_in', true);
-      await _saveAccountToDevice(_currentUser!);
+    if (trimmedName.length < 2) {
+      _errorMessage = 'Please enter a valid full name (at least 2 characters).';
       _setLoading(false);
-      return true;
+      return false;
     }
+
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(trimmedEmail)) {
+      _errorMessage = 'Please enter a valid email address (e.g. name@domain.com).';
+      _setLoading(false);
+      return false;
+    }
+
+    if (trimmedPass.length < 6) {
+      _errorMessage = 'Password must be at least 6 characters long.';
+      _setLoading(false);
+      return false;
+    }
+
+    final usersMap = await _loadRegisteredUsers();
+
+    if (usersMap.containsKey(trimmedEmail)) {
+      _errorMessage = 'An account with "$trimmedEmail" is already registered. Please log in.';
+      _setLoading(false);
+      return false;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+
+    // If online backend is reachable
+    if (!_apiClient.isDemoMode) {
+      try {
+        final response = await _apiClient.post('/register.php', {
+          'full_name': trimmedName,
+          'email': trimmedEmail,
+          'password': trimmedPass,
+        });
+
+        if (response.success) {
+          return await login(trimmedEmail, trimmedPass);
+        }
+      } catch (_) {}
+    }
+
+    // Register user locally
+    final newId = DateTime.now().millisecondsSinceEpoch;
+    usersMap[trimmedEmail] = {
+      'id': newId,
+      'fullName': trimmedName,
+      'email': trimmedEmail,
+      'password': trimmedPass,
+      'isDemo': false,
+      'createdAt': DateTime.now().toIso8601String(),
+    };
+
+    await _saveRegisteredUsers(usersMap);
+
+    // CRITICAL: Initialize fresh, empty user records for new user
+    await prefs.setString('user_transactions_$trimmedEmail', jsonEncode([]));
+    await prefs.setString('user_goals_$trimmedEmail', jsonEncode([]));
+    await prefs.setString('user_budgets_$trimmedEmail', jsonEncode([]));
+
+    // Log in as new user
+    await _apiClient.setDemoMode(true);
+    _currentUser = UserModel(
+      id: newId,
+      fullName: trimmedName,
+      email: trimmedEmail,
+      currency: '\$',
+      createdAt: DateTime.now(),
+    );
+
+    _isLoggedIn = true;
+    await prefs.setString('cached_user', jsonEncode(_currentUser!.toJson()));
+    await prefs.setBool('is_logged_in', true);
+    await _saveAccountToDevice(_currentUser!);
+    _setLoading(false);
+    return true;
   }
 
   Future<void> logout() async {
@@ -378,6 +471,17 @@ class AuthProvider extends ChangeNotifier {
         email: email ?? _currentUser!.email,
         avatarUrl: savedAvatar ?? _currentUser!.avatarUrl,
       );
+
+      final usersMap = await _loadRegisteredUsers();
+      final emailKey = _currentUser!.email.toLowerCase();
+      if (usersMap.containsKey(emailKey)) {
+        usersMap[emailKey]!['fullName'] = _currentUser!.fullName;
+        if (newPassword != null && newPassword.trim().isNotEmpty) {
+          usersMap[emailKey]!['password'] = newPassword.trim();
+        }
+        await _saveRegisteredUsers(usersMap);
+      }
+
       await prefs.setString('cached_user', jsonEncode(_currentUser!.toJson()));
       await _saveAccountToDevice(_currentUser!);
       _setLoading(false);
@@ -385,30 +489,32 @@ class AuthProvider extends ChangeNotifier {
     }
 
     try {
-      final body = <String, dynamic>{};
-      if (fullName != null && fullName.isNotEmpty) body['full_name'] = fullName;
-      if (email != null && email.isNotEmpty) body['email'] = email;
-      if (currentPassword != null && currentPassword.isNotEmpty) body['current_password'] = currentPassword;
-      if (newPassword != null && newPassword.isNotEmpty) body['new_password'] = newPassword;
+      final response = await _apiClient.put('/profile.php', {
+        if (fullName != null) 'full_name': fullName,
+        if (email != null) 'email': email,
+        if (currentPassword != null) 'current_password': currentPassword,
+        if (newPassword != null) 'new_password': newPassword,
+      });
 
-      final response = await _apiClient.post('/profile.php', body);
-      if (response.success) {
-        _currentUser = _currentUser!.copyWith(
-          fullName: fullName ?? _currentUser!.fullName,
-          email: email ?? _currentUser!.email,
-          avatarUrl: savedAvatar ?? _currentUser!.avatarUrl,
-        );
+      if (response.success && response.data != null) {
+        final userData = response.data is Map<String, dynamic>
+            ? (response.data['user'] ?? response.data)
+            : response.data;
+        _currentUser = UserModel.fromJson(userData);
+        if (savedAvatar != null) {
+          _currentUser = _currentUser!.copyWith(avatarUrl: savedAvatar);
+        }
         await prefs.setString('cached_user', jsonEncode(_currentUser!.toJson()));
         await _saveAccountToDevice(_currentUser!);
         _setLoading(false);
         return true;
       } else {
-        _errorMessage = response.message;
+        _errorMessage = response.message ?? 'Failed to update profile';
         _setLoading(false);
         return false;
       }
     } catch (e) {
-      _errorMessage = 'Profile update failed: $e';
+      _errorMessage = 'Network error. Please try again.';
       _setLoading(false);
       return false;
     }
