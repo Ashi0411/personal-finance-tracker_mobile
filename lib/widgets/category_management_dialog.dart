@@ -223,10 +223,11 @@ class _CategoryManagementDialogState extends State<CategoryManagementDialog> wit
     final incomeCategories = txProvider.categories.where((c) => c.type == 'income').toList();
 
     return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 500, maxHeight: 600),
-        padding: const EdgeInsets.all(24),
+        constraints: const BoxConstraints(maxWidth: 500, maxHeight: 620),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
         child: Column(
           children: [
             Row(
@@ -238,7 +239,7 @@ class _CategoryManagementDialogState extends State<CategoryManagementDialog> wit
                     SizedBox(width: 10),
                     Text(
                       'Manage Categories',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+                      style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
                     ),
                   ],
                 ),
@@ -290,8 +291,8 @@ class _CategoryManagementDialogState extends State<CategoryManagementDialog> wit
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  _buildCategoryList(expenseCategories, 'expense'),
-                  _buildCategoryList(incomeCategories, 'income'),
+                  _buildCategoryList(expenseCategories, 'expense', isDark),
+                  _buildCategoryList(incomeCategories, 'income', isDark),
                 ],
               ),
             ),
@@ -308,6 +309,7 @@ class _CategoryManagementDialogState extends State<CategoryManagementDialog> wit
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   backgroundColor: AppColors.primary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
               ),
             ),
@@ -317,7 +319,7 @@ class _CategoryManagementDialogState extends State<CategoryManagementDialog> wit
     );
   }
 
-  Widget _buildCategoryList(List<CategoryModel> categories, String type) {
+  Widget _buildCategoryList(List<CategoryModel> categories, String type, bool isDark) {
     if (categories.isEmpty) {
       return Center(
         child: Text('No $type categories yet. Tap Add New Category to create!'),
@@ -333,27 +335,48 @@ class _CategoryManagementDialogState extends State<CategoryManagementDialog> wit
         final cat = categories[index];
         final color = CategoryIconHelper.parseColor(cat.color);
 
-        return ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-          leading: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(CategoryIconHelper.getIcon(cat.icon), color: color, size: 20),
-          ),
-          title: Text(cat.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+          child: Row(
             children: [
-              IconButton(
-                icon: const Icon(Icons.edit_outlined, size: 18),
-                onPressed: () => _openAddEditDialog(cat, type),
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                alignment: Alignment.center,
+                child: Icon(CategoryIconHelper.getIcon(cat.icon), color: color, size: 18),
               ),
-              IconButton(
-                icon: const Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.expense),
-                onPressed: () async {
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  cat.name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
+              InkWell(
+                onTap: () => _openAddEditDialog(cat, type),
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.all(6),
+                  child: Icon(
+                    Icons.edit_outlined,
+                    size: 18,
+                    color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              InkWell(
+                onTap: () async {
                   final confirm = await showDialog<bool>(
                     context: context,
                     builder: (ctx) => AlertDialog(
@@ -373,6 +396,11 @@ class _CategoryManagementDialogState extends State<CategoryManagementDialog> wit
                     await txProvider.deleteCategory(cat.id);
                   }
                 },
+                borderRadius: BorderRadius.circular(8),
+                child: const Padding(
+                  padding: const EdgeInsets.all(6),
+                  child: Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.expense),
+                ),
               ),
             ],
           ),
