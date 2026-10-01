@@ -15,6 +15,7 @@ import '../../providers/transaction_provider.dart';
 import '../../widgets/category_icon_helper.dart';
 import '../../widgets/hover_lift_card.dart';
 import '../../widgets/month_year_picker_bar.dart';
+import '../../widgets/month_year_picker_popup.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -44,106 +45,17 @@ class _ReportsScreenState extends State<ReportsScreen> {
     });
   }
 
-  void _showExportOptions(BuildContext context, FinancialReportModel report) {
-    final txProvider = Provider.of<TransactionProvider>(context, listen: false);
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        final isDark = Theme.of(ctx).brightness == Brightness.dark;
-        return Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.darkCard : Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 18),
-              const Text(
-                'Export Financial Records',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Download printable PDF statement or CSV spreadsheet',
-                style: TextStyle(
-                  color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                  fontSize: 13,
-                ),
-              ),
-              const SizedBox(height: 20),
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppColors.expense.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.expense, size: 22),
-                ),
-                title: const Text('Download PDF Statement', style: TextStyle(fontWeight: FontWeight.w700)),
-                subtitle: const Text('Complete formatted financial overview with tables and KPIs', style: TextStyle(fontSize: 12)),
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  await ExportHelper.exportPdfReport(
-                    report: report,
-                    transactions: txProvider.transactions,
-                    user: authProvider.currentUser,
-                    currencySymbol: themeProvider.currencySymbol,
-                  );
-                },
-              ),
-              const SizedBox(height: 8),
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppColors.income.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(Icons.table_chart_rounded, color: AppColors.income, size: 22),
-                ),
-                title: const Text('Export CSV (Excel / Sheets)', style: TextStyle(fontWeight: FontWeight.w700)),
-                subtitle: const Text('Raw transactions data spreadsheet', style: TextStyle(fontSize: 12)),
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  await ExportHelper.exportCsvReport(
-                    txProvider.transactions,
-                    themeProvider.currencySymbol,
-                    ExportHelper.getStatementTitle(report),
-                  );
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  FinancialReportModel _computeLiveReport(List<TransactionModel> transactions) {
+  FinancialReportModel _computeReportFor(
+    List<TransactionModel> transactions,
+    DateTime date,
+    String periodType,
+  ) {
     final filtered = transactions.where((tx) {
-      if (_periodType == 'monthly') {
-        return tx.transactionDate.year == _selectedDate.year &&
-            tx.transactionDate.month == _selectedDate.month;
+      if (periodType == 'monthly') {
+        return tx.transactionDate.year == date.year &&
+            tx.transactionDate.month == date.month;
       } else {
-        return tx.transactionDate.year == _selectedDate.year;
+        return tx.transactionDate.year == date.year;
       }
     }).toList();
 
@@ -195,7 +107,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       double mIncome = 0;
       double mExpense = 0;
       for (final tx in transactions) {
-        if (tx.transactionDate.year == _selectedDate.year && tx.transactionDate.month == m) {
+        if (tx.transactionDate.year == date.year && tx.transactionDate.month == m) {
           if (tx.type.toLowerCase() == 'income') {
             mIncome += tx.amount;
           } else {
@@ -211,16 +123,561 @@ class _ReportsScreenState extends State<ReportsScreen> {
     }
 
     return FinancialReportModel(
-      periodType: _periodType,
-      periodValue: _periodType == 'monthly'
-          ? '${_selectedDate.year}-${_selectedDate.month}'
-          : '${_selectedDate.year}',
+      periodType: periodType,
+      periodValue: periodType == 'monthly'
+          ? '${date.year}-${date.month}'
+          : '${date.year}',
       totalIncome: income,
       totalExpense: expense,
       netSavings: income - expense,
       savingsRate: income > 0 ? (((income - expense) / income) * 100).clamp(0.0, 100.0) : 0.0,
       categoryBreakdowns: catList,
       cashflows: cashflows,
+    );
+  }
+
+  FinancialReportModel _computeLiveReport(List<TransactionModel> transactions) {
+    return _computeReportFor(transactions, _selectedDate, _periodType);
+  }
+
+  void _showExportOptions(BuildContext context, [FinancialReportModel? initialReport]) {
+    final txProvider = Provider.of<TransactionProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+
+    DateTime exportDate = _selectedDate;
+    String exportPeriodType = _periodType;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+
+        return StatefulBuilder(
+          builder: (modalContext, setModalState) {
+            // Compute live report for whatever month/year is selected in this modal
+            final currentReport = _computeReportFor(txProvider.transactions, exportDate, exportPeriodType);
+            final filteredTxs = txProvider.transactions.where((tx) {
+              if (exportPeriodType == 'monthly') {
+                return tx.transactionDate.year == exportDate.year &&
+                    tx.transactionDate.month == exportDate.month;
+              } else {
+                return tx.transactionDate.year == exportDate.year;
+              }
+            }).toList();
+
+            final now = DateTime.now();
+            final recentMonths = List.generate(6, (index) {
+              return DateTime(now.year, now.month - index, 1);
+            });
+
+            return Container(
+              padding: const EdgeInsets.only(left: 20, right: 20, top: 16, bottom: 28),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF0F172A) : Colors.white,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.25),
+                    blurRadius: 20,
+                    offset: const Offset(0, -4),
+                  ),
+                ],
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Handle Bar
+                    Center(
+                      child: Container(
+                        width: 44,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Title & Description
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Export Financial Statement',
+                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              'Choose any month or year to download statement',
+                              style: TextStyle(
+                                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded, size: 20),
+                          onPressed: () => Navigator.pop(ctx),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Period Type Switcher (Monthly vs Annual)
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                setModalState(() => exportPeriodType = 'monthly');
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: exportPeriodType == 'monthly'
+                                      ? const Color(0xFF6366F1)
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                alignment: Alignment.center,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.calendar_month_rounded,
+                                      size: 15,
+                                      color: exportPeriodType == 'monthly'
+                                          ? Colors.white
+                                          : (isDark ? Colors.white70 : const Color(0xFF64748B)),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'Monthly Statement',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w800,
+                                        color: exportPeriodType == 'monthly'
+                                            ? Colors.white
+                                            : (isDark ? Colors.white70 : const Color(0xFF64748B)),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                setModalState(() => exportPeriodType = 'yearly');
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: exportPeriodType == 'yearly'
+                                      ? const Color(0xFF6366F1)
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                alignment: Alignment.center,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.bar_chart_rounded,
+                                      size: 15,
+                                      color: exportPeriodType == 'yearly'
+                                          ? Colors.white
+                                          : (isDark ? Colors.white70 : const Color(0xFF64748B)),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'Full Year Overview',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w800,
+                                        color: exportPeriodType == 'yearly'
+                                            ? Colors.white
+                                            : (isDark ? Colors.white70 : const Color(0xFF64748B)),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Quick Month Selection Chips (For Monthly mode)
+                    if (exportPeriodType == 'monthly') ...[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Select Month',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: isDark ? Colors.white70 : const Color(0xFF475569),
+                            ),
+                          ),
+                          InkWell(
+                            onTap: () async {
+                              final picked = await MonthYearPickerPopup.show(ctx, exportDate);
+                              if (picked != null) {
+                                setModalState(() => exportDate = picked);
+                              }
+                            },
+                            borderRadius: BorderRadius.circular(8),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: const [
+                                  Icon(Icons.edit_calendar_rounded, size: 14, color: Color(0xFF6366F1)),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Other Months...',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF6366F1),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: recentMonths.map((mDate) {
+                            final isCurrentSelected = exportDate.year == mDate.year && exportDate.month == mDate.month;
+                            final isThisMonth = now.year == mDate.year && now.month == mDate.month;
+                            final monthLabel = DateFormat('MMM yyyy').format(mDate);
+
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: ChoiceChip(
+                                label: Text(
+                                  isThisMonth ? '$monthLabel (Current)' : monthLabel,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: isCurrentSelected ? FontWeight.w800 : FontWeight.w600,
+                                    color: isCurrentSelected
+                                        ? Colors.white
+                                        : (isDark ? Colors.white70 : const Color(0xFF334155)),
+                                  ),
+                                ),
+                                selected: isCurrentSelected,
+                                selectedColor: const Color(0xFF6366F1),
+                                backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  side: BorderSide(
+                                    color: isCurrentSelected
+                                        ? Colors.transparent
+                                        : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                                  ),
+                                ),
+                                onSelected: (sel) {
+                                  if (sel) {
+                                    setModalState(() => exportDate = mDate);
+                                  }
+                                },
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ] else ...[
+                      // Year Selection Chips (For Yearly mode)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Select Year',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: isDark ? Colors.white70 : const Color(0xFF475569),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [now.year, now.year - 1, now.year - 2].map((yr) {
+                          final isCurrentSelected = exportDate.year == yr;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 10),
+                            child: ChoiceChip(
+                              label: Text(
+                                'Year $yr',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: isCurrentSelected ? FontWeight.w800 : FontWeight.w600,
+                                  color: isCurrentSelected
+                                      ? Colors.white
+                                      : (isDark ? Colors.white70 : const Color(0xFF334155)),
+                                ),
+                              ),
+                              selected: isCurrentSelected,
+                              selectedColor: const Color(0xFF6366F1),
+                              backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                side: BorderSide(
+                                  color: isCurrentSelected
+                                      ? Colors.transparent
+                                      : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                                ),
+                              ),
+                              onSelected: (sel) {
+                                if (sel) {
+                                  setModalState(() => exportDate = DateTime(yr, exportDate.month, 1));
+                                }
+                              },
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                    const SizedBox(height: 14),
+
+                    // Statement Live Preview Summary Card
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF6366F1).withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Icon(
+                                      Icons.receipt_long_rounded,
+                                      color: Color(0xFF6366F1),
+                                      size: 16,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    exportPeriodType == 'monthly'
+                                        ? '${DateFormat('MMMM yyyy').format(exportDate)} Statement'
+                                        : 'Full Year ${exportDate.year} Statement',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: filteredTxs.isNotEmpty
+                                      ? AppColors.income.withValues(alpha: 0.15)
+                                      : Colors.amber.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  '${filteredTxs.length} records',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: filteredTxs.isNotEmpty ? AppColors.income : Colors.amber.shade800,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Total Income',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                                    ),
+                                  ),
+                                  Text(
+                                    Formatters.currency(currentReport.totalIncome, symbol: themeProvider.currencySymbol),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.income,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'Total Expense',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                                    ),
+                                  ),
+                                  Text(
+                                    Formatters.currency(currentReport.totalExpense, symbol: themeProvider.currencySymbol),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.expense,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    'Net Savings',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                                    ),
+                                  ),
+                                  Text(
+                                    Formatters.currency(currentReport.netSavings, symbol: themeProvider.currencySymbol),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                      color: currentReport.netSavings >= 0 ? const Color(0xFF6366F1) : AppColors.expense,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+
+                    // Download Action Buttons
+                    ListTile(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                      ),
+                      tileColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                      leading: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.expense.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.expense, size: 22),
+                      ),
+                      title: Text(
+                        'Download PDF Statement (${exportPeriodType == 'monthly' ? DateFormat('MMM yyyy').format(exportDate) : exportDate.year})',
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                      ),
+                      subtitle: const Text('Executive formatted PDF report with tables, graphs & KPIs', style: TextStyle(fontSize: 11)),
+                      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                      onTap: () async {
+                        Navigator.pop(ctx);
+                        // Also update main screen to this date if user chose a different date
+                        if (mounted) {
+                          setState(() {
+                            _selectedDate = exportDate;
+                            _periodType = exportPeriodType;
+                          });
+                        }
+                        await ExportHelper.exportPdfReport(
+                          report: currentReport,
+                          transactions: txProvider.transactions,
+                          user: authProvider.currentUser,
+                          currencySymbol: themeProvider.currencySymbol,
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    ListTile(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                      ),
+                      tileColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                      leading: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.income.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.table_chart_rounded, color: AppColors.income, size: 22),
+                      ),
+                      title: Text(
+                        'Export CSV (Excel / Sheets)',
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                      ),
+                      subtitle: Text(
+                        'Spreadsheet file with ${filteredTxs.length} transactions for ${exportPeriodType == 'monthly' ? DateFormat('MMM yyyy').format(exportDate) : exportDate.year}',
+                        style: const TextStyle(fontSize: 11),
+                      ),
+                      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                      onTap: () async {
+                        Navigator.pop(ctx);
+                        await ExportHelper.exportCsvReport(
+                          filteredTxs,
+                          themeProvider.currencySymbol,
+                          ExportHelper.getStatementTitle(currentReport),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
