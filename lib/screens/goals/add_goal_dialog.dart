@@ -5,6 +5,7 @@ import '../../core/utils/formatters.dart';
 import '../../models/goal_model.dart';
 import '../../providers/goal_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../providers/transaction_provider.dart';
 import '../../widgets/custom_text_field.dart';
 
 class AddGoalDialog extends StatefulWidget {
@@ -24,6 +25,7 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
   late DateTime _targetDate;
   late String _selectedIcon;
   late String _selectedColor;
+  bool _deductInitialFromBalance = true;
 
   @override
   void initState() {
@@ -66,6 +68,7 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
     if (!_formKey.currentState!.validate()) return;
 
     final goalProvider = Provider.of<GoalProvider>(context, listen: false);
+    final txProvider = Provider.of<TransactionProvider>(context, listen: false);
     final targetAmount = double.tryParse(_targetAmountController.text) ?? 0.0;
     final amount = double.tryParse(_amountController.text) ?? 0.0;
 
@@ -89,6 +92,17 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
         icon: _selectedIcon,
         color: _selectedColor,
       );
+
+      if (success && amount > 0 && _deductInitialFromBalance) {
+        final savingsCategory = await txProvider.getOrCreateSavingsCategory();
+        await txProvider.addTransaction(
+          categoryId: savingsCategory.id,
+          type: 'expense',
+          amount: amount,
+          description: 'Initial Goal Deposit: ${_nameController.text.trim()}',
+          date: DateTime.now(),
+        );
+      }
     }
 
     if (!mounted) return;
@@ -159,6 +173,36 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
                 hint: '0.00',
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
               ),
+              if (widget.goalToEdit == null) ...[
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                    ),
+                  ),
+                  child: SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    value: _deductInitialFromBalance,
+                    activeThumbColor: const Color(0xFF10B981),
+                    onChanged: (val) => setState(() => _deductInitialFromBalance = val),
+                    title: const Text(
+                      'Deduct Initial Deposit from Balance',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                    ),
+                    subtitle: Text(
+                      'Records starting amount as a savings transaction to deduct from monthly funds',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 14),
               const Text('Target Completion Date', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
               const SizedBox(height: 6),

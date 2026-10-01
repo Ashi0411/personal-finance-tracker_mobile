@@ -51,6 +51,9 @@ class CategoryIconHelper {
       case 'target':
       case 'goal':
         return Icons.track_changes_rounded;
+      case 'savings':
+      case 'piggy':
+        return Icons.savings_rounded;
       case 'gift':
         return Icons.card_giftcard_rounded;
       case 'book':

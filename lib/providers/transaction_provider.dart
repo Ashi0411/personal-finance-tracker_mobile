@@ -725,7 +725,31 @@ class TransactionProvider extends ChangeNotifier {
       CategoryModel(id: 9, name: 'Entertainment', type: 'expense', icon: 'film', color: '#8B5CF6'),
       CategoryModel(id: 10, name: 'Utilities & Bills', type: 'expense', icon: 'zap', color: '#EAB308'),
       CategoryModel(id: 11, name: 'Health & Medical', type: 'expense', icon: 'heart', color: '#14B8A6'),
+      CategoryModel(id: 12, name: 'Savings & Goals', type: 'expense', icon: 'savings', color: '#10B981'),
     ];
+  }
+
+  Future<CategoryModel> getOrCreateSavingsCategory() async {
+    if (_categories.isEmpty) {
+      await fetchCategories();
+    }
+    final index = _categories.indexWhere(
+      (c) => c.name.toLowerCase().contains('saving') || c.name.toLowerCase().contains('goal'),
+    );
+    if (index != -1) return _categories[index];
+
+    final newCat = CategoryModel(
+      id: 12,
+      name: 'Savings & Goals',
+      type: 'expense',
+      icon: 'savings',
+      color: '#10B981',
+      isDefault: true,
+    );
+    _categories.add(newCat);
+    await _saveCategoriesToStorage();
+    notifyListeners();
+    return newCat;
   }
 
   void _setLoading(bool value) {
