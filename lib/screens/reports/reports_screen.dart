@@ -600,7 +600,66 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     ),
                     const SizedBox(height: 18),
 
-                    // Download Action Buttons
+                    // Action 1: Share PDF Statement Directly
+                    ListTile(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                      ),
+                      tileColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                      leading: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF6366F1).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.share_rounded, color: Color(0xFF6366F1), size: 22),
+                      ),
+                      title: Text(
+                        'Share PDF Statement (${exportPeriodType == 'monthly' ? DateFormat('MMM yyyy').format(exportDate) : exportDate.year})',
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                      ),
+                      subtitle: const Text('Send directly via WhatsApp, Email, Drive, etc.', style: TextStyle(fontSize: 11)),
+                      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                      onTap: () async {
+                        Navigator.pop(ctx);
+                        if (mounted) {
+                          setState(() {
+                            _selectedDate = exportDate;
+                            _periodType = exportPeriodType;
+                          });
+                        }
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Row(
+                              children: [
+                                const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'Preparing PDF to share for ${exportPeriodType == 'monthly' ? DateFormat('MMMM yyyy').format(exportDate) : exportDate.year}...',
+                                  style: const TextStyle(fontWeight: FontWeight.w600),
+                                ),
+                              ],
+                            ),
+                            duration: const Duration(seconds: 2),
+                            backgroundColor: const Color(0xFF6366F1),
+                          ),
+                        );
+                        await ExportHelper.sharePdfReport(
+                          report: currentReport,
+                          transactions: txProvider.transactions,
+                          user: authProvider.currentUser,
+                          currencySymbol: themeProvider.currencySymbol,
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Action 2: Download / Print PDF Statement
                     ListTile(
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -616,14 +675,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         child: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.expense, size: 22),
                       ),
                       title: Text(
-                        'Download PDF Statement (${exportPeriodType == 'monthly' ? DateFormat('MMM yyyy').format(exportDate) : exportDate.year})',
+                        'Print / Save PDF (${exportPeriodType == 'monthly' ? DateFormat('MMM yyyy').format(exportDate) : exportDate.year})',
                         style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
                       ),
-                      subtitle: const Text('Executive formatted PDF report with tables, graphs & KPIs', style: TextStyle(fontSize: 11)),
+                      subtitle: const Text('Open print preview and save PDF to device storage', style: TextStyle(fontSize: 11)),
                       trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
                       onTap: () async {
                         Navigator.pop(ctx);
-                        // Also update main screen to this date if user chose a different date
                         if (mounted) {
                           setState(() {
                             _selectedDate = exportDate;
@@ -659,6 +717,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       },
                     ),
                     const SizedBox(height: 10),
+
+                    // Action 3: Export CSV (Excel / Sheets)
                     ListTile(
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -751,6 +811,39 @@ class _ReportsScreenState extends State<ReportsScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.share_rounded, size: 20),
+            tooltip: 'Share PDF Statement',
+            onPressed: () async {
+              final authProvider = Provider.of<AuthProvider>(context, listen: false);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Row(
+                    children: [
+                      const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Preparing PDF to share (${_periodType == 'monthly' ? DateFormat('MMMM yyyy').format(_selectedDate) : _selectedDate.year})...',
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                  duration: const Duration(seconds: 2),
+                  backgroundColor: const Color(0xFF6366F1),
+                ),
+              );
+              await ExportHelper.sharePdfReport(
+                report: report,
+                transactions: txProvider.transactions,
+                user: authProvider.currentUser,
+                currencySymbol: themeProvider.currencySymbol,
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.file_download_outlined, size: 22),
             tooltip: context.tr('export_statement'),

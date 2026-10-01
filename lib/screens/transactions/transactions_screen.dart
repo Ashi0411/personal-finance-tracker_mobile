@@ -342,13 +342,44 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       leading: Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
+                          color: const Color(0xFF6366F1).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.share_rounded, color: Color(0xFF6366F1), size: 22),
+                      ),
+                      title: Text(
+                        'Share PDF (${DateFormat('MMM yyyy').format(exportDate)})',
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                      ),
+                      subtitle: const Text('Send directly via WhatsApp, Email, Drive, etc.', style: TextStyle(fontSize: 11)),
+                      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                      onTap: () async {
+                        Navigator.pop(ctx);
+                        await ExportHelper.sharePdfReport(
+                          report: report,
+                          transactions: txProvider.transactions,
+                          user: authProvider.currentUser,
+                          currencySymbol: themeProvider.currencySymbol,
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    ListTile(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                      ),
+                      tileColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                      leading: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
                           color: AppColors.expense.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.expense, size: 22),
                       ),
                       title: Text(
-                        'Download PDF (${DateFormat('MMM yyyy').format(exportDate)})',
+                        'Print / Save PDF (${DateFormat('MMM yyyy').format(exportDate)})',
                         style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
                       ),
                       subtitle: const Text('Complete financial PDF statement', style: TextStyle(fontSize: 11)),

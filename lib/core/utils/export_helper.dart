@@ -798,7 +798,7 @@ class ExportHelper {
     final cleanTitle = (title ?? 'Transactions').replaceAll(' ', '_').replaceAll('-', '_');
     await Printing.sharePdf(
       bytes: Uint8List.fromList(bytes),
-      filename: 'FinanceTracker_${cleanTitle}.csv',
+      filename: 'FinanceTracker_$cleanTitle.csv',
     );
   }
 }
