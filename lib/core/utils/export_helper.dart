@@ -31,8 +31,8 @@ class ExportHelper {
     }
   }
 
-  /// Generate and print/download formatted PDF Financial Statement
-  static Future<void> exportPdfReport({
+  /// Build the pw.Document for the financial statement
+  static Future<pw.Document> buildPdfDocument({
     required FinancialReportModel report,
     required List<TransactionModel> transactions,
     required UserModel? user,
@@ -676,8 +676,26 @@ class ExportHelper {
       );
     }
 
+    return pdf;
+  }
+
+  /// Generate and print/download formatted PDF Financial Statement (Layout Print / Save)
+  static Future<void> exportPdfReport({
+    required FinancialReportModel report,
+    required List<TransactionModel> transactions,
+    required UserModel? user,
+    required String currencySymbol,
+  }) async {
+    final isMonthly = report.periodType.toLowerCase() == 'monthly';
+    final titleForFile = isMonthly ? 'Monthly_Statement_${report.periodValue}' : 'Annual_Statement_${report.periodValue}';
+
     try {
-      final titleForFile = isMonthly ? 'Monthly_Statement_${report.periodValue}' : 'Annual_Statement_${report.periodValue}';
+      final pdf = await buildPdfDocument(
+        report: report,
+        transactions: transactions,
+        user: user,
+        currencySymbol: currencySymbol,
+      );
       final pdfBytes = await pdf.save();
       await Printing.layoutPdf(
         onLayout: (PdfPageFormat format) async => pdfBytes,
@@ -686,16 +704,39 @@ class ExportHelper {
     } catch (e) {
       debugPrint('Error generating/exporting PDF: $e');
       // Fallback share if layoutPdf has platform constraints
-      try {
-        final titleForFile = isMonthly ? 'Monthly_Statement_${report.periodValue}' : 'Annual_Statement_${report.periodValue}';
-        final pdfBytes = await pdf.save();
-        await Printing.sharePdf(
-          bytes: pdfBytes,
-          filename: 'FinanceTracker_$titleForFile.pdf',
-        );
-      } catch (shareErr) {
-        debugPrint('Fallback share error: $shareErr');
-      }
+      await sharePdfReport(
+        report: report,
+        transactions: transactions,
+        user: user,
+        currencySymbol: currencySymbol,
+      );
+    }
+  }
+
+  /// Share formatted PDF Financial Statement directly via WhatsApp, Gmail, Drive, etc.
+  static Future<void> sharePdfReport({
+    required FinancialReportModel report,
+    required List<TransactionModel> transactions,
+    required UserModel? user,
+    required String currencySymbol,
+  }) async {
+    final isMonthly = report.periodType.toLowerCase() == 'monthly';
+    final titleForFile = isMonthly ? 'Monthly_Statement_${report.periodValue}' : 'Annual_Statement_${report.periodValue}';
+
+    try {
+      final pdf = await buildPdfDocument(
+        report: report,
+        transactions: transactions,
+        user: user,
+        currencySymbol: currencySymbol,
+      );
+      final pdfBytes = await pdf.save();
+      await Printing.sharePdf(
+        bytes: pdfBytes,
+        filename: 'FinanceTracker_$titleForFile.pdf',
+      );
+    } catch (e) {
+      debugPrint('Error sharing PDF: $e');
     }
   }
 

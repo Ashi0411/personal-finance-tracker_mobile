@@ -2,7 +2,6 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import '../../core/constants/app_colors.dart';
 import '../../core/localization/app_strings.dart';
 import '../../core/utils/formatters.dart';
 import '../../models/transaction_model.dart';
@@ -10,7 +9,6 @@ import '../../providers/auth_provider.dart';
 import '../../providers/language_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/transaction_provider.dart';
-import '../../widgets/account_switcher_sheet.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/category_icon_helper.dart';
 import '../../widgets/category_management_dialog.dart';
@@ -91,6 +89,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
           tx.transactionDate.month == _selectedDate.month;
     }).toList();
 
+    // Previous transactions strictly before the selected month
+    final previousTransactions = txProvider.transactions.where((tx) {
+      return tx.transactionDate.year < _selectedDate.year ||
+          (tx.transactionDate.year == _selectedDate.year &&
+              tx.transactionDate.month < _selectedDate.month);
+    }).toList();
+
+    final previousIncome = previousTransactions
+        .where((tx) => tx.type.toLowerCase() == 'income')
+        .fold(0.0, (sum, tx) => sum + tx.amount);
+    final previousExpenses = previousTransactions
+        .where((tx) => tx.type.toLowerCase() == 'expense')
+        .fold(0.0, (sum, tx) => sum + tx.amount);
+    final previousCarriedBalance = previousIncome - previousExpenses;
+
     final incomeTransactions = monthTransactions.where((tx) => tx.type.toLowerCase() == 'income').toList();
     final expenseTransactions = monthTransactions.where((tx) => tx.type.toLowerCase() == 'expense').toList();
 
@@ -98,6 +111,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final monthlyIncome = incomeTransactions.fold(0.0, (sum, tx) => sum + tx.amount);
     final monthlyExpenses = expenseTransactions.fold(0.0, (sum, tx) => sum + tx.amount);
     final monthlyNetSavings = monthlyIncome - monthlyExpenses;
+    final totalAccumulatedBalance = previousCarriedBalance + monthlyNetSavings;
 
     // Category Breakdowns for Doughnut Charts
     final expenseCatMap = <String, double>{};
@@ -186,10 +200,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                             const SizedBox(height: 14),
 
-                            // Row 3: Monthly Net Savings
+                            // Row 3: Monthly Net Savings (With Previous Month Carried Forward Savings)
                             InteractiveOverviewCard(
                               title: context.tr('net_savings'),
-                              amount: monthlyNetSavings,
+                              amount: totalAccumulatedBalance,
                               currency: currency,
                               emoji: '💎',
                               icon: Icons.account_balance_wallet_rounded,
@@ -199,6 +213,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               transactions: monthTransactions,
                               monthName: monthName,
                               isDark: isDark,
+                              carriedForwardAmount: previousCarriedBalance,
+                              monthlySavingsAmount: monthlyNetSavings,
                             ),
                           ],
                         ),

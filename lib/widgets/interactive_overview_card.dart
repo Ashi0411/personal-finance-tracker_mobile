@@ -15,6 +15,8 @@ class InteractiveOverviewCard extends StatefulWidget {
   final List<TransactionModel> transactions;
   final String monthName;
   final bool isDark;
+  final double? carriedForwardAmount;
+  final double? monthlySavingsAmount;
 
   const InteractiveOverviewCard({
     super.key,
@@ -29,6 +31,8 @@ class InteractiveOverviewCard extends StatefulWidget {
     required this.transactions,
     required this.monthName,
     required this.isDark,
+    this.carriedForwardAmount,
+    this.monthlySavingsAmount,
   });
 
   @override
@@ -53,10 +57,12 @@ class _InteractiveOverviewCardState extends State<InteractiveOverviewCard> {
       backgroundColor: Colors.transparent,
       builder: (ctx) {
         final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        final carried = widget.carriedForwardAmount ?? 0.0;
+        final monthly = widget.monthlySavingsAmount ?? (widget.amount - carried);
 
         return Container(
           constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(ctx).size.height * 0.75,
+            maxHeight: MediaQuery.of(ctx).size.height * 0.85,
           ),
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
@@ -132,11 +138,11 @@ class _InteractiveOverviewCardState extends State<InteractiveOverviewCard> {
               Divider(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
               const SizedBox(height: 14),
 
-              // If Balance Card: Show ONLY Net Balance Overview without mixing Income & Expense
+              // If Balance Card: Show Cumulative Breakdown (Carried Forward + This Month)
               if (_isBalanceCard) ...[
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: widget.bgColor,
                     borderRadius: BorderRadius.circular(20),
@@ -145,23 +151,23 @@ class _InteractiveOverviewCardState extends State<InteractiveOverviewCard> {
                   child: Column(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(14),
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: widget.primaryColor.withValues(alpha: 0.15),
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(widget.icon, size: 36, color: widget.primaryColor),
+                        child: Icon(widget.icon, size: 32, color: widget.primaryColor),
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 10),
                       Text(
-                        'Total Net Balance (${widget.monthName})',
+                        'Total Available Balance (${widget.monthName})',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: isDark ? Colors.white70 : const Color(0xFF64748B),
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 4),
                       Text(
                         Formatters.currency(widget.amount, symbol: widget.currency),
                         style: TextStyle(
@@ -171,9 +177,9 @@ class _InteractiveOverviewCardState extends State<InteractiveOverviewCard> {
                           letterSpacing: -0.5,
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                         decoration: BoxDecoration(
                           color: (widget.amount >= 0 ? const Color(0xFF10B981) : const Color(0xFFEF4444)).withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(20),
@@ -186,6 +192,78 @@ class _InteractiveOverviewCardState extends State<InteractiveOverviewCard> {
                             color: widget.amount >= 0 ? const Color(0xFF059669) : const Color(0xFFDC2626),
                           ),
                         ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // Breakdown list
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.history_rounded, size: 16, color: isDark ? Colors.white70 : const Color(0xFF64748B)),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Previous Months Carried:',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Text(
+                            Formatters.currency(carried, symbol: widget.currency),
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: carried >= 0 ? (isDark ? Colors.white : const Color(0xFF0F172A)) : const Color(0xFFDC2626),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.calendar_today_rounded, size: 16, color: isDark ? Colors.white70 : const Color(0xFF64748B)),
+                              const SizedBox(width: 8),
+                              Text(
+                                'This Month\'s Net Savings:',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Text(
+                            '${monthly >= 0 ? '+' : ''}${Formatters.currency(monthly, symbol: widget.currency)}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: monthly >= 0 ? const Color(0xFF059669) : const Color(0xFFDC2626),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -410,6 +488,56 @@ class _InteractiveOverviewCardState extends State<InteractiveOverviewCard> {
                       ),
                     ),
                   ),
+
+                  // Row 3: Subtitle badge for Carried Forward if applicable
+                  if (widget.carriedForwardAmount != null && widget.carriedForwardAmount != 0.0) ...[
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.history_rounded,
+                          size: 13,
+                          color: widget.primaryColor.withValues(alpha: 0.8),
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            'Prev: ${Formatters.currency(widget.carriedForwardAmount!, symbol: widget.currency)}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: widget.primaryColor.withValues(alpha: 0.85),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (widget.monthlySavingsAmount != null) ...[
+                          const SizedBox(width: 6),
+                          Text(
+                            '•',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: widget.primaryColor.withValues(alpha: 0.6),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              'This Mo: ${(widget.monthlySavingsAmount! >= 0 ? '+' : '')}${Formatters.currency(widget.monthlySavingsAmount!, symbol: widget.currency)}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: widget.primaryColor.withValues(alpha: 0.85),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
