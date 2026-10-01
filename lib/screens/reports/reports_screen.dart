@@ -630,6 +630,26 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             _periodType = exportPeriodType;
                           });
                         }
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Row(
+                              children: [
+                                const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'Preparing PDF for ${exportPeriodType == 'monthly' ? DateFormat('MMMM yyyy').format(exportDate) : exportDate.year}...',
+                                  style: const TextStyle(fontWeight: FontWeight.w600),
+                                ),
+                              ],
+                            ),
+                            duration: const Duration(seconds: 2),
+                            backgroundColor: const Color(0xFF6366F1),
+                          ),
+                        );
                         await ExportHelper.exportPdfReport(
                           report: currentReport,
                           transactions: txProvider.transactions,
@@ -653,9 +673,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         ),
                         child: const Icon(Icons.table_chart_rounded, color: AppColors.income, size: 22),
                       ),
-                      title: Text(
+                      title: const Text(
                         'Export CSV (Excel / Sheets)',
-                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
                       ),
                       subtitle: Text(
                         'Spreadsheet file with ${filteredTxs.length} transactions for ${exportPeriodType == 'monthly' ? DateFormat('MMM yyyy').format(exportDate) : exportDate.year}',
@@ -664,6 +684,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
                       onTap: () async {
                         Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Generating CSV spreadsheet...'),
+                            duration: Duration(seconds: 2),
+                            backgroundColor: AppColors.income,
+                          ),
+                        );
                         await ExportHelper.exportCsvReport(
                           filteredTxs,
                           themeProvider.currencySymbol,
